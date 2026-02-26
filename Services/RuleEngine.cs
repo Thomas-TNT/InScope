@@ -24,8 +24,10 @@ public class RuleEngine
             .Select(m => m.BlockId);
     }
 
-    private static bool EvaluateConditions(IEnumerable<object> conditions, Dictionary<string, bool> answers)
+    private static bool EvaluateConditions(IEnumerable<object>? conditions, Dictionary<string, bool> answers)
     {
+        if (conditions == null)
+            return true;
         foreach (var cond in conditions)
         {
             if (cond is JsonElement je && !EvaluateCondition(je, answers))
@@ -44,7 +46,8 @@ public class RuleEngine
         if (arr.Count < 2)
             return false;
 
-        var expected = arr[^1].GetBoolean();
+        if (!arr[^1].TryGetBoolean(out var expected))
+            return false;
         var first = arr[0];
 
         if (first.ValueKind == JsonValueKind.String)
