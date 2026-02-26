@@ -1,0 +1,12 @@
+<Window x:Class="InScope.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="InScope - Procedure Document Builder"
+        Height="600" Width="900">
+    <Grid>
+        <TextBlock Text="InScope - Scaffold Ready" 
+                   HorizontalAlignment="Center" 
+                   VerticalAlignment="Center"
+                   FontSize="18"/>
+    </Grid>
+</Window>
