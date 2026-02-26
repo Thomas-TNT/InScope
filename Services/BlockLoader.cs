@@ -47,17 +47,19 @@ public class BlockLoader
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         foreach (var file in Directory.EnumerateFiles(metaPath, "*.json"))
         {
+            BlockMetadata? meta = null;
             try
             {
                 var json = File.ReadAllText(file);
-                var meta = JsonSerializer.Deserialize<BlockMetadata>(json, options);
-                if (meta != null && string.Equals(meta.Section, section, System.StringComparison.OrdinalIgnoreCase))
-                    yield return meta;
+                meta = JsonSerializer.Deserialize<BlockMetadata>(json, options);
             }
             catch
             {
                 // Skip invalid metadata files
             }
+
+            if (meta != null && string.Equals(meta.Section, section, System.StringComparison.OrdinalIgnoreCase))
+                yield return meta;
         }
     }
 }
