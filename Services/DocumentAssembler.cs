@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.IO;
+using System.Windows;
 using System.Windows.Documents;
 using InScope.Models;
 
@@ -19,7 +21,7 @@ public class DocumentAssembler
 
     /// <summary>
     /// Append blocks for the given BlockIds to the document. Skips already-inserted BlockIds.
-    /// Deep-clones block content before insertion.
+    /// Deep-copies block content via XAML serialization before insertion.
     /// </summary>
     public void AppendBlocks(
         FlowDocument targetDocument,
@@ -35,20 +37,22 @@ public class DocumentAssembler
             if (sourceDoc == null)
                 continue;
 
-            var blocks = sourceDoc.Blocks;
-            foreach (Block block in blocks)
-            {
-                var clone = CloneBlock(block);
-                if (clone != null)
-                    targetDocument.Blocks.Add(clone);
-            }
-
+            CopyFlowDocumentContent(sourceDoc, targetDocument);
             insertedBlockIds.Add(blockId);
         }
     }
 
-    private static Block? CloneBlock(Block block)
+    /// <summary>
+    /// Copy content from source to target using XAML serialization (breaks block ownership).
+    /// </summary>
+    private static void CopyFlowDocumentContent(FlowDocument source, FlowDocument target)
     {
-        return block.Clone() as Block;
+        var range = new TextRange(source.ContentStart, source.ContentEnd);
+        using var stream = new MemoryStream();
+        range.Save(stream, DataFormats.Xaml);
+
+        var insertPoint = new TextRange(target.ContentEnd, target.ContentEnd);
+        stream.Position = 0;
+        insertPoint.Load(stream, DataFormats.Xaml);
     }
 }
