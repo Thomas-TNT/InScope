@@ -14,4 +14,8 @@
     <PackageReference Include="QuestPDF" Version="2024.7.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="Content\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

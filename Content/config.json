@@ -1,0 +1,9 @@
+{
+  "procedureTypes": ["Electrical", "Hydraulic", "Mechanical"],
+  "questions": [
+    { "id": "HasHighVoltage", "text": "Does this procedure involve high voltage?", "type": "boolean" },
+    { "id": "UsesTransformer", "text": "Does it use a transformer?", "type": "boolean" },
+    { "id": "UsesInverter", "text": "Does it use an inverter?", "type": "boolean" }
+  ],
+  "basePath": "."
+}
