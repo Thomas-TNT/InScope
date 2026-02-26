@@ -1,6 +1,8 @@
 # InScope — Agent Context Reference
 
-This document provides context for AI agents (e.g. Cursor) working on the InScope codebase. It summarizes the project, implementation status, design decisions, and known gotchas.
+This document provides context for AI agents (e.g. Cursor) working on the InScope codebase. It summarizes the project, implementation status, design decisions, known gotchas, and **required fix patterns** for CI builds. Read this before making changes.
+
+**Critical:** See `docs/BUILD_TROUBLESHOOTING.md` for GitHub Actions build errors and exact fixes.
 
 ---
 
@@ -88,6 +90,8 @@ A detailed build plan lives at `Personal_notes/.cursor/plans/inscope_build_plan_
 - `Content/BlockMetadata/*.json` — BlockId, Section, Order, Conditions
 
 ### Docs
+- `docs/AGENT_CONTEXT.md` — This file; start here for new agents
+- `docs/BUILD_TROUBLESHOOTING.md` — CI build errors and exact fixes
 - `docs/adr/001-rule-engine-conditions.md` — Conditions format (AND, OR, JSON schema)
 - `docs/adr/002-pdf-export-strategy.md` — FlowDocument→QuestPDF approach
 - `docs/config-schema.md` — config.json schema
@@ -137,20 +141,52 @@ Content is copied to output via `InScope.csproj`:
 
 ## 8. Known Gotchas and Build Fixes
 
-### QuestPDF
-- `Document.Create` requires `using QuestPDF.Fluent;`
-- `Unit.Centimetre` requires `using QuestPDF.Infrastructure;`
-- FlowDocumentToPdfConverter must not use `dynamic` for the column parameter — lambdas fail with dynamic dispatch. Use `Func<IContainer> getItem` instead and pass `() => column.Item()` from the Column callback.
+### PdfExporter — Document Resolves (CS0103)
+`Document` can conflict with `System.Windows.Documents`. Use an alias:
+```csharp
+using QuestPDF.Fluent;
+using Document = QuestPDF.Fluent.Document;
+```
+Then call `Document.Create(container => ...)`.
 
-### RuleEngine
-- `JsonElement.TryGetBoolean` is not available in all .NET/System.Text.Json versions. Use `ValueKind == JsonValueKind.True/False` and `GetBoolean()` instead.
-- Conditions deserialize as `List<object>`; each element is `JsonElement` when from JSON arrays.
+### QuestPDF — Unit and Namespaces
+- `Unit.Centimetre` requires `using QuestPDF.Infrastructure;` (in FlowDocumentToPdfConverter)
+- FlowDocumentToPdfConverter must not use `dynamic` for the column parameter — lambdas fail with CS1977. **Use `Func<IContainer> getItem`** and pass `() => column.Item()` from the Column callback. Pass `getItem` to helper methods; call `getItem().Row(row => ...)` etc.
 
-### BlockLoader
-- Cannot `yield return` inside a try block with a catch. Deserialize in try, yield outside.
+### FlowDocumentToPdfConverter — Correct Pattern
+```csharp
+page.Content().Column(column =>
+{
+    foreach (Block block in document.Blocks)
+        AddBlock(block, () => column.Item(), 0);
+});
+
+private static void AddList(List list, Func<IContainer> getItem, int indentLevel)
+{
+    getItem().Row(row => { ... });  // getItem returns IContainer; no dynamic
+}
+```
+
+### RuleEngine — JsonElement Boolean (CS1061)
+**Do not use** `TryGetBoolean` — not available in all System.Text.Json versions. Use:
+```csharp
+var last = arr[^1];
+if (last.ValueKind != JsonValueKind.True && last.ValueKind != JsonValueKind.False)
+    return false;
+var expected = last.GetBoolean();
+```
+
+### BlockLoader — yield in try/catch
+Cannot `yield return` inside a try block with catch. Deserialize in try, yield outside:
+```csharp
+BlockMetadata? meta = null;
+try { meta = JsonSerializer.Deserialize<BlockMetadata>(...); }
+catch { }
+if (meta != null && ...) yield return meta;
+```
 
 ### DocumentAssembler
-- WPF `Block` has no `Clone()` method. Use XAML serialization to copy FlowDocument content.
+- WPF `Block` has no `Clone()` method. Use XAML serialization (TextRange.Save/Load with DataFormats.Xaml) to copy FlowDocument content.
 
 ---
 
@@ -172,3 +208,13 @@ Content is copied to output via `InScope.csproj`:
 3. Add Hydraulic and Mechanical sample content
 4. Implement error handling per `docs/error-handling.md` (status bar messages, dialogs)
 5. Consider ProcedureSession persistence for crash recovery
+
+---
+
+## 11. Do Not (Common Mistakes)
+
+- **Do not** use `JsonElement.TryGetBoolean` — use ValueKind check + GetBoolean
+- **Do not** use `dynamic` for QuestPDF column/row callbacks — use `Func<IContainer> getItem`
+- **Do not** use `Block.Clone()` — use XAML serialization
+- **Do not** put `yield return` inside try-with-catch — move yield outside
+- **Do not** assume `Document` resolves with only `using QuestPDF.Fluent` — add alias if CS0103 occurs

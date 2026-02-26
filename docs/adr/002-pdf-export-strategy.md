@@ -36,3 +36,8 @@ We implement a converter that traverses the FlowDocument block tree and rebuilds
 - Nested lists beyond one level are supported via recursion.
 - Inline formatting (bold, italic) in Paragraph is lost in PDF; only plain text is exported. Future: extend to handle `Run` and `Bold`/`Italic` inlines.
 - Images must be `BitmapSource`; other `UIElement` types in BlockUIContainer are skipped.
+
+## Implementation Notes (CI/Compilation)
+
+- **FlowDocumentToPdfConverter:** Use `Func<IContainer> getItem` (not `dynamic`) when passing column context to helpers — lambdas fail with dynamic dispatch (CS1977).
+- **PdfExporter:** Use `using Document = QuestPDF.Fluent.Document;` to resolve `Document` if CS0103 occurs with `System.Windows.Documents`.
