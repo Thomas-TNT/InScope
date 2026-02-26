@@ -46,8 +46,10 @@ public class RuleEngine
         if (arr.Count < 2)
             return false;
 
-        if (!arr[^1].TryGetBoolean(out var expected))
+        var last = arr[^1];
+        if (last.ValueKind != JsonValueKind.True && last.ValueKind != JsonValueKind.False)
             return false;
+        var expected = last.GetBoolean();
         var first = arr[0];
 
         if (first.ValueKind == JsonValueKind.String)

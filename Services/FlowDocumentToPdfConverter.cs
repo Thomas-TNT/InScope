@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -32,52 +33,51 @@ internal static class FlowDocumentToPdfConverter
                 column.Spacing(4);
                 foreach (Block block in document.Blocks)
                 {
-                    AddBlock(block, column, 0);
+                    AddBlock(block, () => column.Item(), 0);
                 }
             });
         });
     }
 
-    private static void AddBlock(Block block, dynamic column, int indentLevel)
+    private static void AddBlock(Block block, Func<IContainer> getItem, int indentLevel)
     {
         switch (block)
         {
             case Paragraph para:
-                AddParagraph(para, column, indentLevel);
+                AddParagraph(para, getItem, indentLevel);
                 break;
             case List list:
-                AddList(list, column, indentLevel);
+                AddList(list, getItem, indentLevel);
                 break;
             case Section section:
                 foreach (Block child in section.Blocks)
-                    AddBlock(child, column, indentLevel);
+                    AddBlock(child, getItem, indentLevel);
                 break;
             case BlockUIContainer uiContainer:
-                AddBlockUIContainer(uiContainer, column);
+                AddBlockUIContainer(uiContainer, getItem);
                 break;
             case Table table:
-                AddTable(table, column);
+                AddTable(table, getItem);
                 break;
         }
     }
 
-    private static void AddParagraph(Paragraph para, dynamic column, int indentLevel)
+    private static void AddParagraph(Paragraph para, Func<IContainer> getItem, int indentLevel)
     {
         var text = GetTextFromBlock(para);
         if (string.IsNullOrWhiteSpace(text))
         {
-            column.Item().Height(8);
+            getItem().Height(8);
             return;
         }
 
-        var item = column.Item();
+        var item = getItem();
         if (indentLevel > 0)
             item.PaddingLeft(indentLevel * BulletIndent);
-
         item.Text(text);
     }
 
-    private static void AddList(List list, dynamic column, int indentLevel)
+    private static void AddList(List list, Func<IContainer> getItem, int indentLevel)
     {
         foreach (ListItem listItem in list.ListItems)
         {
@@ -86,25 +86,26 @@ internal static class FlowDocumentToPdfConverter
                 if (block is Paragraph p)
                 {
                     var text = GetTextFromBlock(p);
-                    column.Item().Row(row =>
+                    var indent = indentLevel;
+                    getItem().Row(row =>
                     {
-                        if (indentLevel > 0)
-                            row.ConstantItem(indentLevel * BulletIndent);
+                        if (indent > 0)
+                            row.ConstantItem(indent * BulletIndent);
                         row.ConstantItem(15).Text("\u2022");
                         row.ConstantItem(5);
                         row.RelativeItem().Text(text);
                     });
-                    column.Item().Height(ListSpacing);
+                    getItem().Height(ListSpacing);
                 }
                 else
                 {
-                    AddBlock(block, column, indentLevel + 1);
+                    AddBlock(block, getItem, indentLevel + 1);
                 }
             }
         }
     }
 
-    private static void AddBlockUIContainer(BlockUIContainer container, dynamic column)
+    private static void AddBlockUIContainer(BlockUIContainer container, Func<IContainer> getItem)
     {
         if (container.Child is System.Windows.Controls.Image wpfImage &&
             wpfImage.Source is BitmapSource source)
@@ -112,16 +113,16 @@ internal static class FlowDocumentToPdfConverter
             var bytes = BitmapSourceToPngBytes(source);
             if (bytes != null && bytes.Length > 0)
             {
-                column.Item().Image(bytes);
+                getItem().Image(bytes);
             }
         }
     }
 
-    private static void AddTable(Table table, dynamic column)
+    private static void AddTable(Table table, Func<IContainer> getItem)
     {
         var text = GetTextFromBlock(table);
         if (!string.IsNullOrWhiteSpace(text))
-            column.Item().Text(text);
+            getItem().Text(text);
     }
 
     private static string GetTextFromBlock(Block block)
