@@ -1,11 +1,11 @@
 using System.Windows.Documents;
 using QuestPDF.Fluent;
+using Document = QuestPDF.Fluent.Document;
 
 namespace InScope.Services;
 
 /// <summary>
 /// Exports the assembled FlowDocument to PDF.
-/// TODO: Implement FlowDocument → QuestPDF conversion (Phase 1 spike).
 /// </summary>
 public class PdfExporter
 {
