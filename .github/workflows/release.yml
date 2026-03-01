@@ -25,12 +25,24 @@ jobs:
       - name: Restore
         run: dotnet restore
 
+      - name: Set version from tag
+        id: version
+        run: |
+          $ref = "${{ github.ref }}"
+          $tag = "${{ github.ref_name }}"
+          $v = if ($ref.StartsWith("refs/tags/") -and $tag -match '^v') { $tag.TrimStart('v') } else { "1.0.0" }
+          echo "version=$v" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
       - name: Publish
         run: |
+          $version = "${{ steps.version.outputs.version }}"
           dotnet publish -c Release -r win-x64 --self-contained true `
             /p:PublishSingleFile=true `
             /p:IncludeNativeLibrariesForSelfExtract=true `
             /p:EnableCompressionInSingleFile=true `
+            /p:Version=$version `
+            /p:AssemblyVersion=$version `
             -o publish
         shell: pwsh
 
@@ -40,8 +52,7 @@ jobs:
 
       - name: Build installer
         run: |
-          $tag = "${{ github.ref_name }}"
-          $version = if ($tag) { $tag.TrimStart('v') } else { "1.0.0" }
+          $version = "${{ steps.version.outputs.version }}"
           $publishPath = Join-Path $pwd "publish"
           $distPath = Join-Path $pwd "dist"
           New-Item -ItemType Directory -Path $distPath -Force | Out-Null

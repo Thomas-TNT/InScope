@@ -10,6 +10,8 @@
 
 | Doc | Purpose |
 |-----|---------|
+| `HOW-TO-CREATE-RELEASE.md` | How to create a release with InScope-Setup.exe (push a v* tag) |
+| `HOW-TO-CODE-SIGN.md` | How to code sign the app to fix SmartScreen "unrecognized app" warning |
 | `adr/001-rule-engine-conditions.md` | Conditions format (AND/OR, JSON schema) |
 | `adr/002-pdf-export-strategy.md` | FlowDocument→QuestPDF approach |
 | `config-schema.md` | config.json schema |
