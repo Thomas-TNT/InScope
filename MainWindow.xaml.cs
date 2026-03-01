@@ -83,7 +83,7 @@ public partial class MainWindow : Window
         var version = Assembly.GetEntryAssembly()?.GetName().Version;
         var build = version?.Build ?? 0;
         var versionStr = version != null ? $"{version.Major}.{version.Minor}.{(build >= 0 ? build : 0)}" : "?";
-        _basePath = ConfigLoader.GetContentBasePath();
+        _basePath = ContentPathResolver.GetEffectiveContentPath();
         AppLogger.Log(AppLogger.LogLevel.Info, "Startup", "InScope starting", new { version = versionStr, contentPath = _basePath });
 
         _config = ConfigLoader.Load(_basePath);
@@ -346,7 +346,8 @@ public partial class MainWindow : Window
             return;
         }
 
-        var editor = new BlockEditorWindow(_blockLoader)
+        var procedureTypes = _config?.ProcedureTypes ?? new List<string>();
+        var editor = new BlockEditorWindow(_blockLoader, procedureTypes)
         {
             Owner = this
         };

@@ -23,11 +23,16 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="Blocks" FontWeight="SemiBold" Margin="8,8,8,4" Foreground="#333"/>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="8,8,8,4">
+                        <TextBlock Text="Blocks" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="#333"/>
+                        <Button x:Name="AddBlockButton" Content="Add" Margin="8,0,0,0" Padding="8,2" Click="AddBlock_Click"/>
+                        <Button x:Name="DeleteBlockButton" Content="Delete" Margin="4,0,0,0" Padding="8,2" Click="DeleteBlock_Click"/>
+                    </StackPanel>
                     <ListBox x:Name="BlockList"
-                             Grid.Row="1"
+                             Grid.Row="2"
                              SelectionChanged="BlockList_SelectionChanged"
                              DisplayMemberPath="BlockId"
                              Margin="4,0,4,4">

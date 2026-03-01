@@ -103,6 +103,107 @@ public class BlockLoader
     }
 
     /// <summary>
+    /// Create a new block with empty RTF and metadata. Returns true on success.
+    /// </summary>
+    public bool CreateBlock(string blockId, string section)
+    {
+        if (string.IsNullOrWhiteSpace(blockId))
+            return false;
+
+        var blocksPath = GetBlocksPath();
+        var metaPath = Path.Combine(_basePath, "BlockMetadata");
+        Directory.CreateDirectory(blocksPath);
+        Directory.CreateDirectory(metaPath);
+
+        var rtfPath = Path.Combine(blocksPath, $"{blockId}.rtf");
+        var metaFilePath = Path.Combine(metaPath, $"{blockId}.json");
+        if (File.Exists(rtfPath) || File.Exists(metaFilePath))
+            return false;
+
+        try
+        {
+            var minimalRtf = "{\\rtf1\\ansi }";
+            File.WriteAllText(rtfPath, minimalRtf);
+
+            var maxOrder = LoadAllMetadata()
+                .Where(m => string.Equals(m.Section, section, System.StringComparison.OrdinalIgnoreCase))
+                .Select(m => m.Order)
+                .DefaultIfEmpty(-1)
+                .Max();
+            var order = maxOrder + 1;
+
+            var meta = new BlockMetadata
+            {
+                BlockId = blockId,
+                Section = section,
+                Order = order,
+                Conditions = new List<object>()
+            };
+            var options = new JsonSerializerOptions { WriteIndented = true };
+            var json = JsonSerializer.Serialize(meta, options);
+            File.WriteAllText(metaFilePath, json);
+            return true;
+        }
+        catch
+        {
+            try { if (File.Exists(rtfPath)) File.Delete(rtfPath); } catch { }
+            try { if (File.Exists(metaFilePath)) File.Delete(metaFilePath); } catch { }
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Delete a block (RTF and metadata). Returns true on success.
+    /// </summary>
+    public bool DeleteBlock(string blockId)
+    {
+        if (string.IsNullOrWhiteSpace(blockId))
+            return false;
+
+        var rtfPath = Path.Combine(GetBlocksPath(), $"{blockId}.rtf");
+        var metaPath = Path.Combine(_basePath, "BlockMetadata", $"{blockId}.json");
+        try
+        {
+            if (File.Exists(rtfPath))
+                File.Delete(rtfPath);
+            if (File.Exists(metaPath))
+                File.Delete(metaPath);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Returns true if the block exists (has RTF file).
+    /// </summary>
+    public bool BlockExists(string blockId)
+    {
+        var path = Path.Combine(GetBlocksPath(), $"{blockId}.rtf");
+        return File.Exists(path);
+    }
+
+    /// <summary>
+    /// Read current RTF file content as bytes. Returns null if file does not exist.
+    /// </summary>
+    public byte[]? ReadRtfBytes(string blockId)
+    {
+        var path = Path.Combine(GetBlocksPath(), $"{blockId}.rtf");
+        if (!File.Exists(path))
+            return null;
+        try
+        {
+            return File.ReadAllBytes(path);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Load all BlockMetadata JSON files (all sections). Used for block editor grouping.
     /// </summary>
     public IEnumerable<BlockMetadata> LoadAllMetadata()

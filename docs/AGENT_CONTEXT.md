@@ -96,10 +96,12 @@ A detailed build plan lives at `Personal_notes/.cursor/plans/inscope_build_plan_
 - `Models/AppConfig.cs` — Config from config.json: procedureTypes, questions, basePath
 
 ### Services
-- `Services/ConfigLoader.cs` — Resolves content path (./Content or C:\ProgramData\InScope), loads config.json
+- `Services/ContentPathResolver.cs` — Effective content path; when primary Blocks folder is read-only, uses %LocalAppData%\InScope\Content (copy from primary on first use)
+- `Services/ConfigLoader.cs` — Loads config.json from given path
 - `Services/AppLogger.cs` — File-based logging to %LocalAppData%\InScope\Logs\inscope.log; OpenLogFolder()
 - `Services/UpdateService.cs` — Checks GitHub Releases (Thomas-TNT/InScope); DownloadInstallerAsync; GetCurrentVersion
-- `Services/BlockLoader.cs` — Loads RTF as FlowDocument, saves RTF via SaveRtf, enumerates BlockIds, loads BlockMetadata (by section or all)
+- `Services/BlockLoader.cs` — Loads RTF, SaveRtf, CreateBlock, DeleteBlock, EnumerateBlockIds, LoadMetadata, ReadRtfBytes
+- `Services/BlockChangeLog.cs` — Logs block changes; backs up previous content; 14-day rolling retention for recovery
 - `Services/RuleEngine.cs` — Evaluates Conditions (AND/OR) against Answers; returns ordered BlockIds
 - `Services/DocumentAssembler.cs` — Appends blocks via XAML serialization (TextRange save/load); tracks InsertedBlockIds
 - `Services/PdfExporter.cs` — Delegates to FlowDocumentToPdfConverter, generates PDF
@@ -108,7 +110,8 @@ A detailed build plan lives at `Personal_notes/.cursor/plans/inscope_build_plan_
 ### UI
 - `MainWindow.xaml` — Menu (File → Start New, Export to PDF, Edit Block Library, Exit; Help → Check for Updates, Open Log Folder), two-pane layout, status bar with version (bottom-right), production blue header bar
 - `MainWindow.xaml.cs` — Wiring: Start New, answer handlers, RebuildDocument, RuleEngine/DocumentAssembler, PDF export, UpdateService, AppLogger; IsRunningFromDev, production title bar (DWM)
-- `BlockEditorWindow.xaml` — Block Library Editor: list of blocks (grouped by section), RichTextBox, Save/Revert/Close. Opens via File → Edit Block Library.
+- `BlockEditorWindow.xaml` — Block Library Editor: Add/Delete blocks, list (grouped by section), RichTextBox, Save/Revert/Close. Change log on save.
+- `AddBlockDialog.xaml` — Dialog for new block: BlockId, Section. Used by Block Editor Add button.
 
 ### Scripts
 - `scripts/create-release.ps1` — Creates and pushes v* tag; auto-suggests next version from remote tags
