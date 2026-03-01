@@ -1,7 +1,11 @@
 using System;
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 using System.Linq;
+=======
+using System.Net;
+>>>>>>> Stashed changes
 =======
 using System.Net;
 >>>>>>> Stashed changes
@@ -23,7 +27,11 @@ public class UpdateService
 {
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     private const string RepoOwner = "tteru";
+=======
+    private const string RepoOwner = "Thomas-TNT";
+>>>>>>> Stashed changes
 =======
     private const string RepoOwner = "Thomas-TNT";
 >>>>>>> Stashed changes
@@ -59,6 +67,11 @@ public class UpdateService
         public UpdateInfo? Update { get; init; }
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+        /// <summary>Optional error message when Success is false.</summary>
+        public string? ErrorMessage { get; init; }
+>>>>>>> Stashed changes
 =======
         /// <summary>Optional error message when Success is false.</summary>
         public string? ErrorMessage { get; init; }
@@ -73,6 +86,10 @@ public class UpdateService
     /// Fetch the latest release from GitHub and return info if a newer version exists.
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+    /// Handles 404 (no releases, or private repo) and rate limiting gracefully.
+>>>>>>> Stashed changes
 =======
     /// Handles 404 (no releases, or private repo) and rate limiting gracefully.
 >>>>>>> Stashed changes
@@ -88,7 +105,10 @@ public class UpdateService
             using var response = await HttpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 
@@ -105,6 +125,9 @@ public class UpdateService
             }
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -132,10 +155,13 @@ public class UpdateService
         }
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         catch
         {
             return new UpdateCheckResult { Success = false, Update = null };
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
         catch (HttpRequestException ex)
@@ -148,6 +174,9 @@ public class UpdateService
             AppLogger.Log(AppLogger.LogLevel.Error, "UpdateCheck", "Update check failed", new { message = ex.Message, type = ex.GetType().Name });
             return new UpdateCheckResult { Success = false, ErrorMessage = "Could not check for updates. Please try again later." };
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
@@ -186,6 +215,7 @@ public class UpdateService
 
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         foreach (var asset in assets.EnumerateArray())
         {
             var name = asset.TryGetProperty("name", out var n) ? n.GetString() : null;
@@ -195,6 +225,8 @@ public class UpdateService
 
         return null;
 =======
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
         string? fallbackExe = null;
@@ -214,6 +246,9 @@ public class UpdateService
 
         return fallbackExe;
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
