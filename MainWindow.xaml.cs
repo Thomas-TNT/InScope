@@ -62,7 +62,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            var path = Environment.ProcessPath ?? Assembly.GetEntryAssembly()?.Location ?? AppContext.BaseDirectory ?? "";
+            var path = Environment.ProcessPath ?? AppContext.BaseDirectory ?? "";
             var dir = Path.GetDirectoryName(path);
             if (string.IsNullOrEmpty(dir)) dir = AppContext.BaseDirectory ?? "";
             var sep = Path.DirectorySeparatorChar.ToString();
