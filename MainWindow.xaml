@@ -23,6 +23,9 @@
                 <Separator/>
                 <MenuItem Header="Exit" Click="Exit_Click"/>
             </MenuItem>
+            <MenuItem Header="Help">
+                <MenuItem Header="Open Log Folder" Click="OpenLogFolder_Click"/>
+            </MenuItem>
         </Menu>
 
         <Grid Grid.Row="1">

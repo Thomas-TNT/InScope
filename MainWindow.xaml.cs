@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -29,11 +30,17 @@ public partial class MainWindow : Window
 
     private void LoadConfiguration()
     {
+        var version = Assembly.GetEntryAssembly()?.GetName().Version;
+        var build = version?.Build ?? 0;
+        var versionStr = version != null ? $"{version.Major}.{version.Minor}.{(build >= 0 ? build : 0)}" : "?";
         _basePath = ConfigLoader.GetContentBasePath();
+        AppLogger.Log(AppLogger.LogLevel.Info, "Startup", "InScope starting", new { version = versionStr, contentPath = _basePath });
+
         _config = ConfigLoader.Load(_basePath);
 
         if (_config == null)
         {
+            AppLogger.Log(AppLogger.LogLevel.Warning, "Startup", "Content setup not found");
             MessageBox.Show(
                 "Content setup not found. Ensure config.json exists in the Content folder or C:\\ProgramData\\InScope.",
                 "InScope - Setup Required",
@@ -176,6 +183,7 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
+                AppLogger.Log(AppLogger.LogLevel.Error, "PdfExport", "PDF export failed", new { message = ex.Message, exceptionType = ex.GetType().FullName });
                 MessageBox.Show($"PDF export failed: {ex.Message}", "InScope", MessageBoxButton.OK, MessageBoxImage.Error);
                 StatusText.Text = "Export failed.";
             }
@@ -185,5 +193,10 @@ public partial class MainWindow : Window
     private void Exit_Click(object sender, RoutedEventArgs e)
     {
         Application.Current.Shutdown();
+    }
+
+    private void OpenLogFolder_Click(object sender, RoutedEventArgs e)
+    {
+        AppLogger.OpenLogFolder();
     }
 }
