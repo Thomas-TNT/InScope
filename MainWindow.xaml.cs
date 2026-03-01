@@ -29,8 +29,26 @@ public partial class MainWindow : Window
         LoadConfiguration();
     }
 
+    private static bool IsRunningFromDev()
+    {
+        try
+        {
+            var path = Environment.ProcessPath ?? Assembly.GetEntryAssembly()?.Location ?? AppContext.BaseDirectory ?? "";
+            var dir = Path.GetDirectoryName(path);
+            if (string.IsNullOrEmpty(dir)) dir = AppContext.BaseDirectory ?? "";
+            var sep = Path.DirectorySeparatorChar.ToString();
+            return dir.Contains(sep + "bin" + sep + "Debug" + sep, StringComparison.OrdinalIgnoreCase)
+                || dir.Contains(sep + "bin" + sep + "Release" + sep, StringComparison.OrdinalIgnoreCase);
+        }
+        catch { return false; }
+    }
+
     private void LoadConfiguration()
     {
+        var versionDisplay = $"v{UpdateService.GetCurrentVersion()}";
+        if (IsRunningFromDev())
+            versionDisplay += " (dev)";
+        VersionText.Text = versionDisplay;
         var version = Assembly.GetEntryAssembly()?.GetName().Version;
         var build = version?.Build ?? 0;
         var versionStr = version != null ? $"{version.Major}.{version.Minor}.{(build >= 0 ? build : 0)}" : "?";

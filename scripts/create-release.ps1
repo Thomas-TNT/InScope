@@ -26,9 +26,11 @@ try {
         exit 1
     }
 
-    # Ensure format doesn't already have 'v'
-    if ($Version.StartsWith("v")) {
-        $Version = $Version.TrimStart("v")
+    # Normalize version: strip leading 'v' and any stray dots
+    $Version = $Version.Trim().TrimStart("v").TrimStart(".")
+    if (-not $Version) {
+        Write-Host "Invalid version. Use e.g. 1.0.4 or v1.0.4" -ForegroundColor Red
+        exit 1
     }
     $tag = "v$Version"
 
@@ -45,8 +47,11 @@ try {
     }
 
     # Ensure on main and up to date
-    Write-Host "Checking out main and pulling latest..."
-    git checkout main 2>$null
+    Write-Host "Switching to main and pulling latest..."
+    $currentBranch = (git branch --show-current 2>$null)
+    if ($currentBranch -ne "main") {
+        git checkout main
+    }
     git pull origin main
 
     # Check if tag already exists

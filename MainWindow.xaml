@@ -56,18 +56,22 @@
             </Border>
         </Grid>
 
-        <StatusBar Grid.Row="2" Height="24">
-            <StatusBarItem>
-                <TextBlock x:Name="StatusText" Text="Ready"/>
-            </StatusBarItem>
-            <Separator/>
-            <StatusBarItem>
-                <TextBlock x:Name="ProcedureTypeText" Text="—"/>
-            </StatusBarItem>
-            <Separator/>
-            <StatusBarItem>
-                <TextBlock x:Name="BlockCountText" Text="0 blocks"/>
-            </StatusBarItem>
-        </StatusBar>
+        <Grid Grid.Row="2" Height="24">
+            <StatusBar>
+                <StatusBarItem>
+                    <TextBlock x:Name="StatusText" Text="Ready"/>
+                </StatusBarItem>
+                <Separator/>
+                <StatusBarItem>
+                    <TextBlock x:Name="ProcedureTypeText" Text="—"/>
+                </StatusBarItem>
+                <Separator/>
+                <StatusBarItem>
+                    <TextBlock x:Name="BlockCountText" Text="0 blocks"/>
+                </StatusBarItem>
+            </StatusBar>
+            <TextBlock x:Name="VersionText" Text="v0.0.0" HorizontalAlignment="Right" VerticalAlignment="Center"
+                       Margin="0,0,12,0" Foreground="#888" FontSize="11"/>
+        </Grid>
     </Grid>
 </Window>
