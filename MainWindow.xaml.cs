@@ -29,7 +29,54 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         SourceInitialized += OnSourceInitialized;
+        Loaded += OnLoaded;
         LoadConfiguration();
+    }
+
+    private async void OnLoaded(object? sender, RoutedEventArgs e)
+    {
+        if (IsRunningFromDev()) return;
+        await PerformStartupUpdateCheckAsync();
+    }
+
+    private async System.Threading.Tasks.Task PerformStartupUpdateCheckAsync()
+    {
+        try
+        {
+            var result = await UpdateService.CheckForUpdateAsync();
+            if (!result.Success) return;
+
+            if (result.Update == null) return;
+
+            var update = result.Update;
+            var message = $"Update v{update.Version} available.\n\nDownload and install now? The app will close when the installer starts.";
+            var dialogResult = MessageBox.Show(message, "InScope - Update Available",
+                MessageBoxButton.YesNo, MessageBoxImage.Information);
+            if (dialogResult == MessageBoxResult.Yes && !string.IsNullOrEmpty(update.DownloadUrl))
+            {
+                StatusText.Text = "Downloading update...";
+                try
+                {
+                    var installerPath = await UpdateService.DownloadInstallerAsync(update.DownloadUrl);
+                    StatusText.Text = "Launching installer...";
+                    Process.Start(new ProcessStartInfo(installerPath) { UseShellExecute = true });
+                    Application.Current.Shutdown();
+                }
+                catch (Exception downloadEx)
+                {
+                    AppLogger.Log(AppLogger.LogLevel.Error, "UpdateCheck", "Startup download failed", new { message = downloadEx.Message });
+                    MessageBox.Show($"Download failed: {downloadEx.Message}\n\nYou can try Help → Check for Updates or the website instead.", "InScope - Update", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+                finally
+                {
+                    StatusText.Text = "Ready.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Log(AppLogger.LogLevel.Warning, "UpdateCheck", "Startup update check failed", new { message = ex.Message });
+        }
     }
 
     private void OnSourceInitialized(object? sender, EventArgs e)
