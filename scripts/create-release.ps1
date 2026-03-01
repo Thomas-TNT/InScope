@@ -7,6 +7,21 @@ param(
     [string]$Version
 )
 
+function Get-NextVersion {
+    $tags = git ls-remote --tags origin 2>$null | ForEach-Object {
+        if ($_ -match 'refs/tags/v(\d+\.\d+\.\d+)(\^\{\})?$') {
+            $matches[1]
+        }
+    } | Where-Object {
+        try { [version]$_ | Out-Null; $true } catch { $false }
+    }
+    if (-not $tags) { return "1.0.0" }
+    $latest = $tags | Sort-Object { [version]$_ } -Descending | Select-Object -First 1
+    if (-not $latest) { return "1.0.0" }
+    $v = [version]$latest
+    return "$($v.Major).$($v.Minor).$($v.Build + 1)"
+}
+
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 
@@ -18,7 +33,12 @@ try {
 
     # Get version if not provided
     if (-not $Version) {
-        $Version = Read-Host "Enter version number (e.g. 1.0.5)"
+        $suggested = Get-NextVersion
+        $Version = Read-Host "Enter version number [default: $suggested]"
+        if ([string]::IsNullOrWhiteSpace($Version)) {
+            $Version = $suggested
+            Write-Host "Using $Version" -ForegroundColor Gray
+        }
     }
     $Version = $Version.Trim()
     if (-not $Version) {
