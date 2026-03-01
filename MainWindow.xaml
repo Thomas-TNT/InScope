@@ -7,11 +7,14 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Menu Grid.Row="0">
+        <Border x:Name="ProductionHeaderBar" Height="4" Background="#0078D4" Visibility="Collapsed"/>
+
+        <Menu Grid.Row="1">
             <MenuItem Header="File">
                 <MenuItem Header="Start New">
                     <MenuItem Header="Electrical" Click="StartNew_Click" Tag="Electrical"/>
@@ -29,7 +32,7 @@
             </MenuItem>
         </Menu>
 
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="280" MinWidth="200"/>
                 <ColumnDefinition Width="5"/>
@@ -56,7 +59,7 @@
             </Border>
         </Grid>
 
-        <Grid Grid.Row="2" Height="24">
+        <Grid Grid.Row="3" Height="24">
             <StatusBar>
                 <StatusBarItem>
                     <TextBlock x:Name="StatusText" Text="Ready"/>

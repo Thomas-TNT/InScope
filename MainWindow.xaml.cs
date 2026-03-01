@@ -4,9 +4,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Interop;
 using Microsoft.Win32;
 using InScope.Models;
 using InScope.Services;
@@ -26,8 +28,35 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        SourceInitialized += OnSourceInitialized;
         LoadConfiguration();
     }
+
+    private void OnSourceInitialized(object? sender, EventArgs e)
+    {
+        if (IsRunningFromDev()) return;
+        ApplyProductionTitleBarColor();
+    }
+
+    private static void ApplyProductionTitleBarColor()
+    {
+        try
+        {
+            var w = Application.Current.MainWindow;
+            if (w == null) return;
+            var helper = new WindowInteropHelper(w);
+            var hwnd = helper.EnsureHandle();
+            if (hwnd == IntPtr.Zero) return;
+            const int DWMWA_CAPTION_COLOR = 35;
+            var color = 0x00D478; // BGR: #0078D4 blue
+            var attr = new[] { (int)(color & 0xFFFFFF) };
+            _ = DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, attr, sizeof(int));
+        }
+        catch { /* Windows 10 or older - caption color not supported */ }
+    }
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, int[] attrValue, int attrSize);
 
     private static bool IsRunningFromDev()
     {
@@ -46,9 +75,11 @@ public partial class MainWindow : Window
     private void LoadConfiguration()
     {
         var versionDisplay = $"v{UpdateService.GetCurrentVersion()}";
-        if (IsRunningFromDev())
+        var isDev = IsRunningFromDev();
+        if (isDev)
             versionDisplay += " (dev)";
         VersionText.Text = versionDisplay;
+        ProductionHeaderBar.Visibility = isDev ? Visibility.Collapsed : Visibility.Visible;
         var version = Assembly.GetEntryAssembly()?.GetName().Version;
         var build = version?.Build ?? 0;
         var versionStr = version != null ? $"{version.Major}.{version.Minor}.{(build >= 0 ? build : 0)}" : "?";
