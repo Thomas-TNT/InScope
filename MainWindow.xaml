@@ -25,16 +25,7 @@
             </MenuItem>
             <MenuItem Header="Help">
                 <MenuItem Header="Check for Updates" Click="CheckForUpdates_Click"/>
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
                 <MenuItem Header="Open Log Folder" Click="OpenLogFolder_Click"/>
->>>>>>> Stashed changes
             </MenuItem>
         </Menu>
 

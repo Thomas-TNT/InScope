@@ -149,6 +149,27 @@ private static void CopyFlowDocumentContent(FlowDocument source, FlowDocument ta
 
 ---
 
+## Error 6: MC3000 — Name cannot begin with '<' (Merge conflict markers)
+
+**Error:**
+```
+MainWindow.xaml(28,2): error MC3000: 'Name cannot begin with the '<' character, hexadecimal value 0x3C. Line 28, position 2.' XML is not valid.
+```
+
+**Cause:** Unresolved Git merge conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`) left in XAML or other XML files. The `<` in `<<<<<<<` is invalid XML.
+
+**Fix:** Remove all conflict markers from the file. Search for `<<<<<<`, `======`, `>>>>>>` and resolve conflicts. Keep only the desired content. For `MainWindow.xaml` Help menu, the correct result is:
+```xml
+<MenuItem Header="Help">
+    <MenuItem Header="Check for Updates" Click="CheckForUpdates_Click"/>
+    <MenuItem Header="Open Log Folder" Click="OpenLogFolder_Click"/>
+</MenuItem>
+```
+
+**Prevention:** After merging branches, run `git diff` or search for conflict markers before committing. Ensure the branch that triggers CI (e.g. main) has clean files.
+
+---
+
 ## Verifying Fixes
 
 After applying fixes, ensure:

@@ -1,17 +1,6 @@
 using System;
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-using System.Linq;
-=======
+using System.IO;
 using System.Net;
->>>>>>> Stashed changes
-=======
-using System.Net;
->>>>>>> Stashed changes
-=======
-using System.Net;
->>>>>>> Stashed changes
 using System.Net.Http;
 using System.Reflection;
 using System.Text.Json;
@@ -25,19 +14,7 @@ namespace InScope.Services;
 /// </summary>
 public class UpdateService
 {
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-    private const string RepoOwner = "tteru";
-=======
     private const string RepoOwner = "Thomas-TNT";
->>>>>>> Stashed changes
-=======
-    private const string RepoOwner = "Thomas-TNT";
->>>>>>> Stashed changes
-=======
-    private const string RepoOwner = "Thomas-TNT";
->>>>>>> Stashed changes
     private const string RepoName = "InScope";
     private const string ApiBase = "https://api.github.com";
     private const string InstallerAssetName = "InScope-Setup.exe";
@@ -65,37 +42,13 @@ public class UpdateService
     {
         public bool Success { get; init; }
         public UpdateInfo? Update { get; init; }
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
         /// <summary>Optional error message when Success is false.</summary>
         public string? ErrorMessage { get; init; }
->>>>>>> Stashed changes
-=======
-        /// <summary>Optional error message when Success is false.</summary>
-        public string? ErrorMessage { get; init; }
->>>>>>> Stashed changes
-=======
-        /// <summary>Optional error message when Success is false.</summary>
-        public string? ErrorMessage { get; init; }
->>>>>>> Stashed changes
     }
 
     /// <summary>
     /// Fetch the latest release from GitHub and return info if a newer version exists.
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
     /// Handles 404 (no releases, or private repo) and rate limiting gracefully.
->>>>>>> Stashed changes
-=======
-    /// Handles 404 (no releases, or private repo) and rate limiting gracefully.
->>>>>>> Stashed changes
-=======
-    /// Handles 404 (no releases, or private repo) and rate limiting gracefully.
->>>>>>> Stashed changes
     /// </summary>
     public static async Task<UpdateCheckResult> CheckForUpdateAsync(CancellationToken cancellationToken = default)
     {
@@ -103,14 +56,6 @@ public class UpdateService
         {
             var url = $"{ApiBase}/repos/{RepoOwner}/{RepoName}/releases/latest";
             using var response = await HttpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
@@ -124,13 +69,6 @@ public class UpdateService
                 return new UpdateCheckResult { Success = false, ErrorMessage = "Update server temporarily unavailable (rate limit). Please try again later." };
             }
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
             response.EnsureSuccessStatusCode();
 
             var json = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -153,17 +91,6 @@ public class UpdateService
 
             return new UpdateCheckResult { Success = true, Update = new UpdateInfo(version, downloadUrl, htmlUrl ?? "", body ?? "") };
         }
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-        catch
-        {
-            return new UpdateCheckResult { Success = false, Update = null };
-=======
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
         catch (HttpRequestException ex)
         {
             AppLogger.Log(AppLogger.LogLevel.Warning, "UpdateCheck", "Network error", new { message = ex.Message });
@@ -173,13 +100,6 @@ public class UpdateService
         {
             AppLogger.Log(AppLogger.LogLevel.Error, "UpdateCheck", "Update check failed", new { message = ex.Message, type = ex.GetType().Name });
             return new UpdateCheckResult { Success = false, ErrorMessage = "Could not check for updates. Please try again later." };
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
         }
     }
 
@@ -213,22 +133,6 @@ public class UpdateService
         if (!root.TryGetProperty("assets", out var assets) || assets.ValueKind != JsonValueKind.Array)
             return null;
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-        foreach (var asset in assets.EnumerateArray())
-        {
-            var name = asset.TryGetProperty("name", out var n) ? n.GetString() : null;
-            if (name == InstallerAssetName && asset.TryGetProperty("browser_download_url", out var urlProp))
-                return urlProp.GetString();
-        }
-
-        return null;
-=======
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
         string? fallbackExe = null;
         foreach (var asset in assets.EnumerateArray())
         {
@@ -245,13 +149,33 @@ public class UpdateService
         }
 
         return fallbackExe;
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
+    }
+
+    /// <summary>
+    /// Download the installer from the given URL to a temp file and return the path.
+    /// </summary>
+    public static async Task<string> DownloadInstallerAsync(string downloadUrl, IProgress<long>? progress = null, CancellationToken cancellationToken = default)
+    {
+        using var response = await HttpClient.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var totalBytes = response.Content.Headers.ContentLength ?? 0L;
+        var tempPath = Path.Combine(Path.GetTempPath(), $"InScope-Setup-{Guid.NewGuid():N}.exe");
+
+        await using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        await using var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None);
+
+        var buffer = new byte[81920];
+        long totalRead = 0;
+        int read;
+        while ((read = await contentStream.ReadAsync(buffer, cancellationToken)) > 0)
+        {
+            await fileStream.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+            totalRead += read;
+            progress?.Report(totalRead);
+        }
+
+        return tempPath;
     }
 }
 
