@@ -22,6 +22,20 @@ This document provides context for AI agents (e.g. Cursor) working on the InScop
 
 ---
 
+## 0. Current State Summary (Quick Context)
+
+| Area | Status |
+|------|--------|
+| **Content** | Electrical procedure only (`elec-000`, `elec-001`, `elec-002`). Hydraulic/Mechanical listed in config but no blocks. |
+| **Questions** | All questions shown for all procedure types (no `sections` filtering). |
+| **OnAnswer** | Append-only. Changing Yes→No does **not** remove blocks — known limitation (duplication risk). |
+| **Logging** | `AppLogger` writes to `%LocalAppData%\InScope\Logs\inscope.log`. Help → Open Log Folder. |
+| **CI** | `build.yml` runs on push/PR to main; build + publish to `publish` folder. **No release creation.** |
+| **Installer / Updates** | None. No Inno Setup, no `UpdateService`, no GitHub Releases workflow. |
+| **QuestPDF** | Community license assumed (no explicit `QuestPDF.Settings.License` set; may need for compliance). |
+
+---
+
 ## 1. Project Overview
 
 **InScope** is a Windows WPF desktop application that builds procedure documents from pre-authored RTF blocks. The user answers guided Yes/No questions; the RuleEngine decides which blocks to insert; blocks are appended to a live document; the user can edit in place; the final document is exported to PDF.
@@ -79,7 +93,11 @@ A detailed build plan lives at `Personal_notes/.cursor/plans/inscope_build_plan_
 | Phase 4 | Sample content (Electrical procedure) | Done |
 | Phase 5 | Publish script, validation checklist | Done |
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 | Phase 6 | QuestPDF license (Community), Hydraulic/Mechanical placeholder content, run-readiness.ps1, developer-role rule, web-app-feasibility doc | Done |
+=======
+| Phase 5.5 | AppLogger, Help → Open Log Folder, startup/PDF error logging | Done |
+>>>>>>> Stashed changes
 =======
 | Phase 5.5 | AppLogger, Help → Open Log Folder, startup/PDF error logging | Done |
 >>>>>>> Stashed changes
@@ -245,11 +263,14 @@ if (meta != null && ...) yield return meta;
 
 1. Run validation checklist on Windows (`docs/VALIDATION_CHECKLIST.md`)
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 2. Extend FlowDocumentToPdfConverter to preserve bold/italic (traverse Paragraph Inlines)
 3. Add more Hydraulic and Mechanical blocks with procedure-specific questions and conditions
 4. Implement error handling per `docs/error-handling.md` (status bar messages, dialogs)
 5. Consider ProcedureSession persistence for crash recovery
 =======
+=======
+>>>>>>> Stashed changes
 2. Fix block rebuild: OnAnswer should rebuild document from scratch when answers change (prevents duplication)
 3. Add `sections` to QuestionConfig and filter questions by procedure type in RenderQuestions()
 4. Add Hydraulic and Mechanical sample content (Blocks + BlockMetadata)
@@ -257,6 +278,9 @@ if (meta != null && ...) yield return meta;
 6. Implement error handling per `docs/error-handling.md` (status bar messages, dialogs)
 7. Consider ProcedureSession persistence for crash recovery
 8. Optional: Add auto-release workflow (installer, release.yml), UpdateService, QuestPDF license
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 ---

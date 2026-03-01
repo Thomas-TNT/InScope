@@ -298,4 +298,47 @@ public partial class MainWindow : Window
                 menuItem.IsEnabled = true;
         }
     }
+
+    private async void CheckForUpdates_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem item)
+            item.IsEnabled = false;
+
+        try
+        {
+            var result = await UpdateService.CheckForUpdateAsync();
+            if (!result.Success)
+            {
+                var msg = result.ErrorMessage ?? "Could not check for updates. Please try again later.";
+                MessageBox.Show(msg, "InScope - Check for Updates", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (result.Update != null)
+            {
+                var update = result.Update;
+                var message = $"Update available: v{update.Version}\n\nWould you like to open the download page in your browser?";
+                var dialogResult = MessageBox.Show(message, "InScope - Update Available",
+                    MessageBoxButton.YesNo, MessageBoxImage.Information);
+                if (dialogResult == MessageBoxResult.Yes && !string.IsNullOrEmpty(update.ReleaseUrl))
+                    Process.Start(new ProcessStartInfo(update.ReleaseUrl) { UseShellExecute = true });
+            }
+            else
+            {
+                MessageBox.Show($"You have the latest version (v{UpdateService.GetCurrentVersion()}).",
+                    "InScope - Check for Updates", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Log(AppLogger.LogLevel.Error, "UpdateCheck", "Check for updates failed", new { message = ex.Message });
+            MessageBox.Show("Could not check for updates. Please try again later.",
+                "InScope - Check for Updates", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally
+        {
+            if (sender is MenuItem menuItem)
+                menuItem.IsEnabled = true;
+        }
+    }
 }
