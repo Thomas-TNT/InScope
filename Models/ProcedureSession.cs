@@ -24,6 +24,11 @@ public class ProcedureSession
     public HashSet<string> InsertedBlockIds { get; set; } = new();
 
     /// <summary>
+    /// BlockId to the document Blocks that were inserted for that block. Used for removal when answers change.
+    /// </summary>
+    public Dictionary<string, List<Block>> InsertedBlocks { get; set; } = new();
+
+    /// <summary>
     /// The live document being assembled. User edits are preserved.
     /// </summary>
     public FlowDocument Document { get; set; } = new FlowDocument();

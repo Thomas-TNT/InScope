@@ -24,7 +24,7 @@
                 <MenuItem Header="Exit" Click="Exit_Click"/>
             </MenuItem>
             <MenuItem Header="Help">
-                <MenuItem Header="Open Log Folder" Click="OpenLogFolder_Click"/>
+                <MenuItem Header="Check for Updates" Click="CheckForUpdates_Click"/>
             </MenuItem>
         </Menu>
 

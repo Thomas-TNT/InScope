@@ -24,6 +24,8 @@ dotnet run
 
 Or run `bin\Release\net8.0-windows\InScope.exe` (or Debug) directly. The app looks for `Content\` next to the executable.
 
+**Quick start:** Run `.\scripts\run-readiness.ps1` to verify prerequisites, build, and launch in one step.
+
 ## Publish (single self-contained .exe)
 
 ```bash

@@ -1,8 +1,1 @@
-{
-  "BlockId": "elec-002",
-  "Section": "Electrical",
-  "Order": 2,
-  "Conditions": [
-    [["UsesTransformer", "UsesInverter"], true]
-  ]
-}
+{"BlockId":"elec-002","Section":"Electrical","Order":3,"Conditions":[[["UsesTransformer","UsesInverter"],true]]}

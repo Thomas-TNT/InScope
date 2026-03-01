@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -70,6 +71,7 @@ public partial class MainWindow : Window
             ProcedureType = procedureType,
             Answers = new Dictionary<string, bool>(),
             InsertedBlockIds = new HashSet<string>(),
+            InsertedBlocks = new Dictionary<string, List<Block>>(),
             Document = new FlowDocument()
         };
 
@@ -80,6 +82,7 @@ public partial class MainWindow : Window
         UpdateBlockCount(0);
         StatusText.Text = $"Started {procedureType} procedure.";
         RenderQuestions();
+        RebuildDocument();
     }
 
     private void RenderQuestions()
@@ -89,7 +92,13 @@ public partial class MainWindow : Window
         if (_session == null || _config == null)
             return;
 
-        var questions = _config.Questions.Where(q => q.Type == "boolean").ToList();
+        var questions = _config.Questions
+            .Where(q => q.Type == "boolean")
+            .Where(q => q.Sections == null || q.Sections.Count == 0 || q.Sections.Contains(_session.ProcedureType, StringComparer.OrdinalIgnoreCase))
+            .ToList();
+        // #region agent log
+        DebugLog.Log("MainWindow.RenderQuestions", "Questions filtered", new { procedureType = _session.ProcedureType, questionIds = questions.Select(q => q.Id).ToList() });
+        // #endregion
         if (questions.Count == 0)
         {
             QuestionsPanel.Children.Add(new TextBlock
@@ -141,16 +150,33 @@ public partial class MainWindow : Window
         yesBtn.IsEnabled = !value;
         noBtn.IsEnabled = value;
 
-        var metadata = _blockLoader.LoadMetadata(_session.ProcedureType).ToList();
-        var blockIds = _ruleEngine.GetBlocksToInsert(metadata, _session.Answers);
-        var toInsert = blockIds.Except(_session.InsertedBlockIds).ToList();
+        RebuildDocument();
+        StatusText.Text = _session.InsertedBlockIds.Count > 0 ? $"Document updated: {_session.InsertedBlockIds.Count} block(s)." : "Document updated.";
+    }
 
-        if (toInsert.Count > 0)
+    private void RebuildDocument()
+    {
+        if (_session == null || _blockLoader == null || _ruleEngine == null || _documentAssembler == null)
+            return;
+
+        var metadata = _blockLoader.LoadMetadata(_session.ProcedureType).ToList();
+        var blockIds = _ruleEngine.GetBlocksToInsert(metadata, _session.Answers).ToList();
+        // #region agent log
+        var answersSnap = new Dictionary<string, bool>(_session.Answers);
+        DebugLog.Log("MainWindow.RebuildDocument", "Blocks resolved", new { procedureType = _session.ProcedureType, answers = answersSnap, blockIds = blockIds.ToList() });
+        // #endregion
+
+        // Rebuild document from scratch to avoid duplication (block-by-block removal was unreliable)
+        _session.Document.Blocks.Clear();
+        _session.InsertedBlockIds.Clear();
+        _session.InsertedBlocks.Clear();
+
+        if (blockIds.Count > 0)
         {
-            _documentAssembler.AppendBlocks(_session.Document, _session.InsertedBlockIds, toInsert);
-            UpdateBlockCount(_session.InsertedBlockIds.Count);
-            StatusText.Text = $"Added {toInsert.Count} block(s).";
+            _documentAssembler.AppendBlocks(_session.Document, _session.InsertedBlockIds, blockIds, _session.InsertedBlocks);
         }
+
+        UpdateBlockCount(_session.InsertedBlockIds.Count);
     }
 
     private void UpdateBlockCount(int count)
@@ -195,8 +221,46 @@ public partial class MainWindow : Window
         Application.Current.Shutdown();
     }
 
-    private void OpenLogFolder_Click(object sender, RoutedEventArgs e)
+    private async void CheckForUpdates_Click(object sender, RoutedEventArgs e)
     {
-        AppLogger.OpenLogFolder();
+        if (sender is MenuItem item)
+            item.IsEnabled = false;
+
+        try
+        {
+            var result = await UpdateService.CheckForUpdateAsync();
+            if (!result.Success)
+            {
+                MessageBox.Show("Could not check for updates. Please try again later.",
+                    "InScope - Check for Updates", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (result.Update != null)
+            {
+                var update = result.Update;
+                var message = $"Update available: v{update.Version}\n\n" +
+                    "Would you like to open the download page in your browser?";
+                var dialogResult = MessageBox.Show(message, "InScope - Update Available",
+                    MessageBoxButton.YesNo, MessageBoxImage.Information);
+                if (dialogResult == MessageBoxResult.Yes && !string.IsNullOrEmpty(update.ReleaseUrl))
+                    Process.Start(new ProcessStartInfo(update.ReleaseUrl) { UseShellExecute = true });
+            }
+            else
+            {
+                MessageBox.Show($"You have the latest version (v{UpdateService.GetCurrentVersion()}).",
+                    "InScope - Check for Updates", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+        catch (Exception)
+        {
+            MessageBox.Show("Could not check for updates. Please try again later.",
+                "InScope - Check for Updates", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally
+        {
+            if (sender is MenuItem menuItem)
+                menuItem.IsEnabled = true;
+        }
     }
 }

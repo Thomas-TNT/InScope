@@ -1,9 +1,11 @@
 {
   "procedureTypes": ["Electrical", "Hydraulic", "Mechanical"],
   "questions": [
-    { "id": "HasHighVoltage", "text": "Does this procedure involve high voltage?", "type": "boolean" },
-    { "id": "UsesTransformer", "text": "Does it use a transformer?", "type": "boolean" },
-    { "id": "UsesInverter", "text": "Does it use an inverter?", "type": "boolean" }
+    {"id": "HasHighVoltage", "text": "Does this procedure involve high voltage?", "type": "boolean", "sections": ["Electrical"]},
+    {"id": "UsesTransformer", "text": "Does it use a transformer?", "type": "boolean", "sections": ["Electrical"]},
+    {"id": "UsesInverter", "text": "Does it use an inverter?", "type": "boolean", "sections": ["Electrical"]},
+    {"id": "InvolvesHighPressure", "text": "Does it involve high pressure (hydraulic/pneumatic)?", "type": "boolean", "sections": ["Hydraulic"]},
+    {"id": "InvolvesRotatingEquipment", "text": "Does it involve rotating equipment (motors, pumps, drives)?", "type": "boolean", "sections": ["Mechanical"]}
   ],
   "basePath": "."
 }
