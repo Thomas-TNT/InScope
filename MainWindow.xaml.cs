@@ -48,7 +48,7 @@ public partial class MainWindow : Window
             var hwnd = helper.EnsureHandle();
             if (hwnd == IntPtr.Zero) return;
             const int DWMWA_CAPTION_COLOR = 35;
-            var color = 0x00D478; // BGR: #0078D4 blue
+            var color = 0xD47800; // BGR for #0078D4 blue
             var attr = new[] { (int)(color & 0xFFFFFF) };
             _ = DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, attr, sizeof(int));
         }
