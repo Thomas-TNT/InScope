@@ -4,6 +4,8 @@ This document provides context for AI agents (e.g. Cursor) working on the InScop
 
 **Critical:** See `docs/BUILD_TROUBLESHOOTING.md` for GitHub Actions build errors and exact fixes.
 
+**Role-based agents:** For code work, adopt the Developer role from `Personal_notes/Personal_notes-main/role_based_agents/`. The project uses `.cursor/rules/developer-role.mdc` to enforce Developer responsibilities (implementation, design, review, handoff awareness).
+
 ---
 
 ## 1. Project Overview
@@ -62,13 +64,14 @@ A detailed build plan lives at `Personal_notes/.cursor/plans/inscope_build_plan_
 | Phase 3 | Main window UI, menu, questions, RichTextBox | Done |
 | Phase 4 | Sample content (Electrical procedure) | Done |
 | Phase 5 | Publish script, validation checklist | Done |
+| Phase 6 | QuestPDF license (Community), Hydraulic/Mechanical placeholder content, run-readiness.ps1, developer-role rule, web-app-feasibility doc | Done |
 
 ---
 
 ## 5. Key Files and Roles
 
 ### Models
-- `Models/ProcedureSession.cs` — Current session: ProcedureType, Answers, InsertedBlockIds, Document (FlowDocument)
+- `Models/ProcedureSession.cs` — Current session: ProcedureType, Answers, InsertedBlockIds, InsertedBlocks (block refs for removal), Document (FlowDocument)
 - `Models/BlockMetadata.cs` — Block metadata from JSON: BlockId, Section, Order, Conditions
 - `Models/AppConfig.cs` — Config from config.json: procedureTypes, questions, basePath
 
@@ -86,7 +89,7 @@ A detailed build plan lives at `Personal_notes/.cursor/plans/inscope_build_plan_
 
 ### Content
 - `Content/config.json` — Procedure types, questions, basePath
-- `Content/Blocks/*.rtf` — RTF blocks (title, bullets, images)
+- `Content/Blocks/*.rtf` — RTF blocks (Electrical: elec-000..004 + elec-loto; Hydraulic: hyd-000..004; Mechanical: mech-000..004)
 - `Content/BlockMetadata/*.json` — BlockId, Section, Order, Conditions
 
 ### Docs
@@ -99,6 +102,7 @@ A detailed build plan lives at `Personal_notes/.cursor/plans/inscope_build_plan_
 - `docs/content-lifecycle.md` — Technical writer workflow
 - `docs/spikes/rtf-flowdocument.md` — RTF loading notes
 - `docs/VALIDATION_CHECKLIST.md` — Post-build verification
+- `docs/web-app-feasibility.md` — Web application port assessment
 
 ---
 
@@ -128,7 +132,7 @@ A detailed build plan lives at `Personal_notes/.cursor/plans/inscope_build_plan_
 ## 7. Build and Deploy
 
 - **Build:** `dotnet build -c Release`
-- **Run:** `dotnet run` or run exe from output directory
+- **Run:** `dotnet run` or run exe from output directory; or `.\scripts\run-readiness.ps1` (checks .NET, restores, builds, launches)
 - **Publish:** `scripts/publish.ps1` or `dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true ...`
 - **GitHub Actions:** `.github/workflows/build.yml` runs on push/PR to main; Windows runner, .NET 8
 
@@ -140,6 +144,13 @@ Content is copied to output via `InScope.csproj`:
 ---
 
 ## 8. Known Gotchas and Build Fixes
+
+### QuestPDF — License Required
+QuestPDF 2024.x requires explicit license configuration. Set in `App.xaml.cs` OnStartup:
+```csharp
+QuestPDF.Settings.License = LicenseType.Community;
+```
+Community license applies to individuals, nonprofits, FOSS, and orgs under $1M revenue. See https://www.questpdf.com/license/.
 
 ### PdfExporter — Document Resolves (CS0103)
 `Document` can conflict with `System.Windows.Documents`. Use an alias:
@@ -187,13 +198,13 @@ if (meta != null && ...) yield return meta;
 
 ### DocumentAssembler
 - WPF `Block` has no `Clone()` method. Use XAML serialization (TextRange.Save/Load with DataFormats.Xaml) to copy FlowDocument content.
+- Block removal: When answers change from Yes to No, blocks whose conditions are no longer met are removed. ProcedureSession.InsertedBlocks tracks block references for removal.
 
 ---
 
 ## 9. Out of Scope (MVP)
 
 - Block editing inside app
-- Block deletion or regeneration
 - Automatic numbering
 - Word/Office dependency
 - Cloud services or database
@@ -205,7 +216,7 @@ if (meta != null && ...) yield return meta;
 
 1. Run validation checklist on Windows (`docs/VALIDATION_CHECKLIST.md`)
 2. Extend FlowDocumentToPdfConverter to preserve bold/italic (traverse Paragraph Inlines)
-3. Add Hydraulic and Mechanical sample content
+3. Add more Hydraulic and Mechanical blocks with procedure-specific questions and conditions
 4. Implement error handling per `docs/error-handling.md` (status bar messages, dialogs)
 5. Consider ProcedureSession persistence for crash recovery
 
@@ -213,6 +224,7 @@ if (meta != null && ...) yield return meta;
 
 ## 11. Do Not (Common Mistakes)
 
+- **Do not** omit QuestPDF license — set `QuestPDF.Settings.License = LicenseType.Community` in App.OnStartup or PDF export will throw
 - **Do not** use `JsonElement.TryGetBoolean` — use ValueKind check + GetBoolean
 - **Do not** use `dynamic` for QuestPDF column/row callbacks — use `Func<IContainer> getItem`
 - **Do not** use `Block.Clone()` — use XAML serialization

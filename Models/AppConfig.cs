@@ -31,4 +31,10 @@ public class QuestionConfig
 
     [JsonPropertyName("type")]
     public string Type { get; set; } = "boolean";
+
+    /// <summary>
+    /// Optional. Procedure types this question applies to. If null/empty, shown for all.
+    /// </summary>
+    [JsonPropertyName("sections")]
+    public List<string>? Sections { get; set; }
 }

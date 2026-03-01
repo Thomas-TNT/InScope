@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Documents;
 using InScope.Models;
@@ -7,8 +8,8 @@ using InScope.Models;
 namespace InScope.Services;
 
 /// <summary>
-/// Appends blocks to the procedure document. Append-only; never modifies existing content.
-/// Tracks InsertedBlockIds to prevent duplicates.
+/// Appends blocks to the procedure document. Tracks InsertedBlockIds to prevent duplicates.
+/// When insertedBlocksMap is provided, records block references for later removal.
 /// </summary>
 public class DocumentAssembler
 {
@@ -22,11 +23,13 @@ public class DocumentAssembler
     /// <summary>
     /// Append blocks for the given BlockIds to the document. Skips already-inserted BlockIds.
     /// Deep-copies block content via XAML serialization before insertion.
+    /// When insertedBlocksMap is non-null, records the Blocks added for each blockId (for removal support).
     /// </summary>
     public void AppendBlocks(
         FlowDocument targetDocument,
         HashSet<string> insertedBlockIds,
-        IEnumerable<string> blockIdsToInsert)
+        IEnumerable<string> blockIdsToInsert,
+        Dictionary<string, List<Block>>? insertedBlocksMap = null)
     {
         foreach (var blockId in blockIdsToInsert)
         {
@@ -37,8 +40,15 @@ public class DocumentAssembler
             if (sourceDoc == null)
                 continue;
 
+            var countBefore = targetDocument.Blocks.Count;
             CopyFlowDocumentContent(sourceDoc, targetDocument);
             insertedBlockIds.Add(blockId);
+
+            if (insertedBlocksMap != null)
+            {
+                var added = targetDocument.Blocks.Skip(countBefore).ToList();
+                insertedBlocksMap[blockId] = added;
+            }
         }
     }
 

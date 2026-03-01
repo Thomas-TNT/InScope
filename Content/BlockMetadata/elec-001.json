@@ -1,8 +1,1 @@
-{
-  "BlockId": "elec-001",
-  "Section": "Electrical",
-  "Order": 1,
-  "Conditions": [
-    ["HasHighVoltage", true]
-  ]
-}
+{"BlockId":"elec-001","Section":"Electrical","Order":2,"Conditions":[["HasHighVoltage",true]]}
