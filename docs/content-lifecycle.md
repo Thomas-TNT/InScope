@@ -25,9 +25,9 @@ InScope content (RTF blocks and BlockMetadata) can be edited from within the app
    - Set `Order` for insertion sequence.
    - Define `Conditions` per ADR 001.
 
-3. **Update config.json** when adding questions.
-   - Add new question with `id`, `text`, and `type`.
-   - Use the question `id` in BlockMetadata Conditions.
+3. **Create or edit questions** — use one of:
+   - **In-app:** File → Edit Questions to add, edit, or delete questions. Set Id, text, and sections (procedure types). Click Save to persist.
+   - **External:** Edit `config.json` directly. Add question with `id`, `text`, `type`, and optional `sections`. Use the question `id` in BlockMetadata Conditions.
 
 ## Review Steps
 

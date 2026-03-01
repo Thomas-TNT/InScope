@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using InScope;
 
 namespace InScope.Services;
 
@@ -40,7 +41,7 @@ public static class BlockChangeLog
             var timestamp = DateTime.UtcNow;
             string? backupPath = null;
 
-            if (action == "Modified" && previousContent != null && previousContent.Length > 0)
+            if (action == Constants.BlockChangeActionModified && previousContent != null && previousContent.Length > 0)
             {
                 var fileName = $"{blockId}_{timestamp:yyyyMMdd_HHmmss}.rtf";
                 backupPath = Path.Combine("BlockBackups", fileName);

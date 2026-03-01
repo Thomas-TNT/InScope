@@ -41,7 +41,7 @@ public partial class BlockEditorWindow : Window
         var entries = new List<BlockListEntry>();
         foreach (var blockId in blockIds)
         {
-            var section = metadataByBlock.TryGetValue(blockId, out var s) ? s : "Other";
+            var section = metadataByBlock.TryGetValue(blockId, out var s) ? s : Constants.ProcedureTypeOther;
             entries.Add(new BlockListEntry { BlockId = blockId, Section = section });
         }
 
@@ -103,7 +103,7 @@ public partial class BlockEditorWindow : Window
         var previousContent = _blockLoader.ReadRtfBytes(blockId);
         if (previousContent != null && previousContent.Length > 0)
         {
-            BlockChangeLog.LogChange(blockId, "Modified", previousContent);
+            BlockChangeLog.LogChange(blockId, Constants.BlockChangeActionModified, previousContent);
         }
 
         var success = _blockLoader.SaveRtf(blockId, DocumentEditor.Document);
@@ -142,7 +142,7 @@ public partial class BlockEditorWindow : Window
 
     private void AddBlock_Click(object sender, RoutedEventArgs e)
     {
-        var sections = _procedureTypes.Any() ? _procedureTypes : new[] { "Electrical", "Hydraulic", "Mechanical", "Other" };
+        var sections = _procedureTypes.Any() ? _procedureTypes : Constants.DefaultProcedureTypes;
         var dialog = new AddBlockDialog(_blockLoader, sections)
         {
             Owner = this
@@ -156,7 +156,7 @@ public partial class BlockEditorWindow : Window
             return;
         }
 
-        BlockChangeLog.LogChange(dialog.BlockId, "Created", null);
+        BlockChangeLog.LogChange(dialog.BlockId, Constants.BlockChangeActionCreated, null);
         LoadBlockList();
         SelectBlockById(dialog.BlockId);
         StatusText.Text = $"Created {dialog.BlockId}.rtf. Edit and save to add content.";

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using InScope;
 using InScope.Models;
 
 namespace InScope.Services;
@@ -11,30 +12,11 @@ namespace InScope.Services;
 public class ConfigLoader
 {
     /// <summary>
-    /// Get the content base path. Tries ./Content (relative to exe) then C:\ProgramData\InScope.
-    /// </summary>
-    public static string GetContentBasePath()
-    {
-        var exeDir = AppDomain.CurrentDomain.BaseDirectory;
-        var localContent = Path.Combine(exeDir, "Content");
-        var programData = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "InScope");
-
-        if (Directory.Exists(localContent) && File.Exists(Path.Combine(localContent, "config.json")))
-            return localContent;
-        if (Directory.Exists(programData) && File.Exists(Path.Combine(programData, "config.json")))
-            return programData;
-
-        return localContent;
-    }
-
-    /// <summary>
     /// Load config.json from the given base path.
     /// </summary>
     public static AppConfig? Load(string basePath)
     {
-        var configPath = Path.Combine(basePath, "config.json");
+        var configPath = Path.Combine(basePath, Constants.ConfigFileName);
         if (!File.Exists(configPath))
             return null;
 
@@ -55,9 +37,49 @@ public class ConfigLoader
             }
             return config;
         }
-        catch
+        catch (JsonException ex)
         {
+            AppLogger.Log(AppLogger.LogLevel.Warning, "ConfigLoader", "Invalid config JSON", new { configPath, message = ex.Message });
             return null;
+        }
+        catch (IOException ex)
+        {
+            AppLogger.Log(AppLogger.LogLevel.Warning, "ConfigLoader", "Config file read failed", new { configPath, message = ex.Message });
+            return null;
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Log(AppLogger.LogLevel.Warning, "ConfigLoader", "Config load failed", new { configPath, message = ex.Message, type = ex.GetType().Name });
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Save config to config.json. Returns true on success.
+    /// </summary>
+    public static bool SaveConfig(string basePath, AppConfig config)
+    {
+        var configPath = Path.Combine(basePath, Constants.ConfigFileName);
+        try
+        {
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+            var json = JsonSerializer.Serialize(config, options);
+            File.WriteAllText(configPath, json);
+            return true;
+        }
+        catch (IOException ex)
+        {
+            AppLogger.Log(AppLogger.LogLevel.Warning, "ConfigLoader", "Config save failed (IO)", new { configPath, message = ex.Message });
+            return false;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            AppLogger.Log(AppLogger.LogLevel.Warning, "ConfigLoader", "Config save failed (access denied)", new { configPath, message = ex.Message });
+            return false;
         }
     }
 }

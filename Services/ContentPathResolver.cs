@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using InScope;
 
 namespace InScope.Services;
 
@@ -23,9 +24,9 @@ public static class ContentPathResolver
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
             "InScope");
 
-        if (Directory.Exists(localContent) && File.Exists(Path.Combine(localContent, "config.json")))
+        if (Directory.Exists(localContent) && File.Exists(Path.Combine(localContent, Constants.ConfigFileName)))
             return localContent;
-        if (Directory.Exists(programData) && File.Exists(Path.Combine(programData, "config.json")))
+        if (Directory.Exists(programData) && File.Exists(Path.Combine(programData, Constants.ConfigFileName)))
             return programData;
 
         return localContent;
@@ -36,7 +37,7 @@ public static class ContentPathResolver
     /// </summary>
     public static bool IsBlocksWritable(string contentPath)
     {
-        var blocksPath = Path.Combine(contentPath, "Blocks");
+        var blocksPath = Path.Combine(contentPath, Constants.BlocksFolder);
         if (!Directory.Exists(blocksPath))
             return false;
         try
@@ -99,41 +100,50 @@ public static class ContentPathResolver
             Directory.CreateDirectory(userPath);
         }
 
-        var configPath = Path.Combine(userPath, "config.json");
+        var configPath = Path.Combine(userPath, Constants.ConfigFileName);
         if (!File.Exists(configPath))
         {
-            var srcConfig = Path.Combine(primaryPath, "config.json");
+            var srcConfig = Path.Combine(primaryPath, Constants.ConfigFileName);
             if (File.Exists(srcConfig))
-                File.Copy(srcConfig, configPath);
-        }
-
-        var blocksPath = Path.Combine(userPath, "Blocks");
-        if (!Directory.Exists(blocksPath))
-            Directory.CreateDirectory(blocksPath);
-
-        var blocksSrc = Path.Combine(primaryPath, "Blocks");
-        if (Directory.Exists(blocksSrc))
-        {
-            foreach (var file in Directory.EnumerateFiles(blocksSrc, "*.rtf"))
             {
-                var destFile = Path.Combine(blocksPath, Path.GetFileName(file));
-                if (!File.Exists(destFile))
-                    File.Copy(file, destFile);
+                try { File.Copy(srcConfig, configPath); }
+                catch (Exception ex) { AppLogger.Log(AppLogger.LogLevel.Warning, "ContentPathResolver", "Failed to copy config", new { srcConfig, configPath, message = ex.Message }); }
             }
         }
 
-        var metaPath = Path.Combine(userPath, "BlockMetadata");
+        var blocksPath = Path.Combine(userPath, Constants.BlocksFolder);
+        if (!Directory.Exists(blocksPath))
+            Directory.CreateDirectory(blocksPath);
+
+        var blocksSrc = Path.Combine(primaryPath, Constants.BlocksFolder);
+        if (Directory.Exists(blocksSrc))
+        {
+            foreach (var file in Directory.EnumerateFiles(blocksSrc, "*" + Constants.RtfExtension))
+            {
+                var destFile = Path.Combine(blocksPath, Path.GetFileName(file));
+                if (!File.Exists(destFile))
+                {
+                    try { File.Copy(file, destFile); }
+                    catch (Exception ex) { AppLogger.Log(AppLogger.LogLevel.Warning, "ContentPathResolver", "Failed to copy block", new { src = file, dest = destFile, message = ex.Message }); }
+                }
+            }
+        }
+
+        var metaPath = Path.Combine(userPath, Constants.BlockMetadataFolder);
         if (!Directory.Exists(metaPath))
             Directory.CreateDirectory(metaPath);
 
-        var metaSrc = Path.Combine(primaryPath, "BlockMetadata");
+        var metaSrc = Path.Combine(primaryPath, Constants.BlockMetadataFolder);
         if (Directory.Exists(metaSrc))
         {
             foreach (var file in Directory.EnumerateFiles(metaSrc, "*.json"))
             {
                 var destFile = Path.Combine(metaPath, Path.GetFileName(file));
                 if (!File.Exists(destFile))
-                    File.Copy(file, destFile);
+                {
+                    try { File.Copy(file, destFile); }
+                    catch (Exception ex) { AppLogger.Log(AppLogger.LogLevel.Warning, "ContentPathResolver", "Failed to copy metadata", new { src = file, dest = destFile, message = ex.Message }); }
+                }
             }
         }
     }

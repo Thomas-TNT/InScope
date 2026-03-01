@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -39,43 +40,50 @@ public partial class MainWindow : Window
         await PerformStartupUpdateCheckAsync();
     }
 
-    private async System.Threading.Tasks.Task PerformStartupUpdateCheckAsync()
+    private async Task PerformStartupUpdateCheckAsync()
     {
         try
         {
             var result = await UpdateService.CheckForUpdateAsync();
-            if (!result.Success) return;
+            if (!result.Success || result.Update == null) return;
 
-            if (result.Update == null) return;
-
-            var update = result.Update;
-            var message = $"Update v{update.Version} available.\n\nDownload and install now? The app will close when the installer starts.";
-            var dialogResult = MessageBox.Show(message, "InScope - Update Available",
-                MessageBoxButton.YesNo, MessageBoxImage.Information);
-            if (dialogResult == MessageBoxResult.Yes && !string.IsNullOrEmpty(update.DownloadUrl))
-            {
-                StatusText.Text = "Downloading update...";
-                try
-                {
-                    var installerPath = await UpdateService.DownloadInstallerAsync(update.DownloadUrl);
-                    StatusText.Text = "Launching installer...";
-                    Process.Start(new ProcessStartInfo(installerPath) { UseShellExecute = true });
-                    Application.Current.Shutdown();
-                }
-                catch (Exception downloadEx)
-                {
-                    AppLogger.Log(AppLogger.LogLevel.Error, "UpdateCheck", "Startup download failed", new { message = downloadEx.Message });
-                    MessageBox.Show($"Download failed: {downloadEx.Message}\n\nYou can try Help → Check for Updates or the website instead.", "InScope - Update", MessageBoxButton.OK, MessageBoxImage.Warning);
-                }
-                finally
-                {
-                    StatusText.Text = "Ready.";
-                }
-            }
+            await TryDownloadAndInstallUpdateAsync(result.Update, s => StatusText.Text = s);
         }
         catch (Exception ex)
         {
             AppLogger.Log(AppLogger.LogLevel.Warning, "UpdateCheck", "Startup update check failed", new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Prompts user to download and install the update. If user confirms, downloads, launches installer, and shuts down app.
+    /// </summary>
+    private async Task TryDownloadAndInstallUpdateAsync(UpdateInfo update, Action<string> setStatus)
+    {
+        var message = $"Update v{update.Version} available.\n\nDownload and install now? The app will close when the installer starts.";
+        var dialogResult = MessageBox.Show(message, "InScope - Update Available",
+            MessageBoxButton.YesNo, MessageBoxImage.Information);
+        if (dialogResult != MessageBoxResult.Yes || string.IsNullOrEmpty(update.DownloadUrl))
+            return;
+
+        setStatus("Downloading update...");
+        try
+        {
+            var installerPath = await UpdateService.DownloadInstallerAsync(update.DownloadUrl);
+            setStatus("Launching installer...");
+            Process.Start(new ProcessStartInfo(installerPath) { UseShellExecute = true });
+            Application.Current.Shutdown();
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Log(AppLogger.LogLevel.Error, "UpdateCheck", "Download failed", new { message = ex.Message });
+            MessageBox.Show($"Download failed: {ex.Message}\n\nYou can try Help → Check for Updates or the website instead.", "InScope - Update", MessageBoxButton.OK, MessageBoxImage.Warning);
+            if (!string.IsNullOrEmpty(update.ReleaseUrl))
+                Process.Start(new ProcessStartInfo(update.ReleaseUrl) { UseShellExecute = true });
+        }
+        finally
+        {
+            setStatus("Ready.");
         }
     }
 
@@ -121,20 +129,13 @@ public partial class MainWindow : Window
 
     private void LoadConfiguration()
     {
-        var versionDisplay = $"v{UpdateService.GetCurrentVersion()}";
-        var isDev = IsRunningFromDev();
-        if (isDev)
-            versionDisplay += " (dev)";
-        VersionText.Text = versionDisplay;
-        ProductionHeaderBar.Visibility = isDev ? Visibility.Collapsed : Visibility.Visible;
-        var version = Assembly.GetEntryAssembly()?.GetName().Version;
-        var build = version?.Build ?? 0;
-        var versionStr = version != null ? $"{version.Major}.{version.Minor}.{(build >= 0 ? build : 0)}" : "?";
+        InitializeVersionDisplay();
         _basePath = ContentPathResolver.GetEffectiveContentPath();
+        var version = Assembly.GetEntryAssembly()?.GetName().Version;
+        var versionStr = version != null ? $"{version.Major}.{version.Minor}.{(version.Build >= 0 ? version.Build : 0)}" : "?";
         AppLogger.Log(AppLogger.LogLevel.Info, "Startup", "InScope starting", new { version = versionStr, contentPath = _basePath });
 
         _config = ConfigLoader.Load(_basePath);
-
         if (_config == null)
         {
             AppLogger.Log(AppLogger.LogLevel.Warning, "Startup", "Content setup not found");
@@ -147,11 +148,30 @@ public partial class MainWindow : Window
             return;
         }
 
-        _blockLoader = new BlockLoader(_config.BasePath);
+        LoadConfigAndServices();
+        ApplyInitialUiState();
+    }
+
+    private void InitializeVersionDisplay()
+    {
+        var versionDisplay = $"v{UpdateService.GetCurrentVersion()}";
+        var isDev = IsRunningFromDev();
+        if (isDev)
+            versionDisplay += " (dev)";
+        VersionText.Text = versionDisplay;
+        ProductionHeaderBar.Visibility = isDev ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private void LoadConfigAndServices()
+    {
+        _blockLoader = new BlockLoader(_config!.BasePath);
         _ruleEngine = new RuleEngine();
         _documentAssembler = new DocumentAssembler(_blockLoader);
         _pdfExporter = new PdfExporter();
+    }
 
+    private void ApplyInitialUiState()
+    {
         QuestionsHeader.Text = "Select a procedure type (File → Start New)";
         StatusText.Text = "Ready. Select File → Start New to begin.";
         UpdateBlockCount(0);
@@ -189,12 +209,10 @@ public partial class MainWindow : Window
             return;
 
         var questions = _config.Questions
-            .Where(q => q.Type == "boolean")
+            .Where(q => q.Type == Constants.QuestionTypeBoolean)
             .Where(q => q.Sections == null || q.Sections.Count == 0 || q.Sections.Contains(_session.ProcedureType, StringComparer.OrdinalIgnoreCase))
             .ToList();
-        // #region agent log
-        DebugLog.Log("MainWindow.RenderQuestions", "Questions filtered", new { procedureType = _session.ProcedureType, questionIds = questions.Select(q => q.Id).ToList() });
-        // #endregion
+
         if (questions.Count == 0)
         {
             QuestionsPanel.Children.Add(new TextBlock
@@ -257,10 +275,6 @@ public partial class MainWindow : Window
 
         var metadata = _blockLoader.LoadMetadata(_session.ProcedureType).ToList();
         var blockIds = _ruleEngine.GetBlocksToInsert(metadata, _session.Answers).ToList();
-        // #region agent log
-        var answersSnap = new Dictionary<string, bool>(_session.Answers);
-        DebugLog.Log("MainWindow.RebuildDocument", "Blocks resolved", new { procedureType = _session.ProcedureType, answers = answersSnap, blockIds = blockIds.ToList() });
-        // #endregion
 
         // Rebuild document from scratch to avoid duplication (block-by-block removal was unreliable)
         _session.Document.Blocks.Clear();
@@ -334,32 +348,7 @@ public partial class MainWindow : Window
 
             if (result.Update != null)
             {
-                var update = result.Update;
-                var message = $"Update v{update.Version} available.\n\nDownload and install now? The app will close when the installer starts.";
-                var dialogResult = MessageBox.Show(message, "InScope - Update Available",
-                    MessageBoxButton.YesNo, MessageBoxImage.Information);
-                if (dialogResult == MessageBoxResult.Yes && !string.IsNullOrEmpty(update.DownloadUrl))
-                {
-                    StatusText.Text = "Downloading update...";
-                    try
-                    {
-                        var installerPath = await UpdateService.DownloadInstallerAsync(update.DownloadUrl);
-                        StatusText.Text = "Launching installer...";
-                        Process.Start(new ProcessStartInfo(installerPath) { UseShellExecute = true });
-                        Application.Current.Shutdown();
-                    }
-                    catch (Exception downloadEx)
-                    {
-                        AppLogger.Log(AppLogger.LogLevel.Error, "UpdateCheck", "Download failed", new { message = downloadEx.Message });
-                        MessageBox.Show($"Download failed: {downloadEx.Message}\n\nYou can try the website instead.", "InScope - Update", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        if (!string.IsNullOrEmpty(update.ReleaseUrl))
-                            Process.Start(new ProcessStartInfo(update.ReleaseUrl) { UseShellExecute = true });
-                    }
-                    finally
-                    {
-                        StatusText.Text = "Ready.";
-                    }
-                }
+                await TryDownloadAndInstallUpdateAsync(result.Update, s => StatusText.Text = s);
             }
             else
             {
@@ -383,6 +372,35 @@ public partial class MainWindow : Window
     private void OpenLogFolder_Click(object sender, RoutedEventArgs e)
     {
         AppLogger.OpenLogFolder();
+    }
+
+    private void EditQuestions_Click(object sender, RoutedEventArgs e)
+    {
+        if (_config == null)
+        {
+            MessageBox.Show("Content setup not found. Add config.json to the Content folder first.", "InScope", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var editor = new QuestionEditorWindow(_config, _basePath)
+        {
+            Owner = this
+        };
+        editor.ShowDialog();
+        if (editor.WasSaved)
+        {
+            var reloaded = ConfigLoader.Load(_basePath);
+            if (reloaded != null)
+            {
+                _config.ProcedureTypes.Clear();
+                _config.ProcedureTypes.AddRange(reloaded.ProcedureTypes);
+                _config.Questions.Clear();
+                _config.Questions.AddRange(reloaded.Questions);
+                _config.BasePath = reloaded.BasePath;
+            }
+            if (_session != null)
+                RenderQuestions();
+        }
     }
 
     private void EditBlockLibrary_Click(object sender, RoutedEventArgs e)

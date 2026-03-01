@@ -19,7 +19,7 @@ This document provides context for AI agents (e.g. Cursor) working on the InScop
 | **Version** | Shown in bottom-right status bar. `(dev)` suffix when running from bin\Debug or bin\Release. |
 | **Production UI** | Blue accent bar at top + blue title bar (Win11) when not in dev. |
 | **CI** | `build.yml` on push/PR to main. `release.yml` on push of v* tag → builds InScope-Setup.exe, creates release. |
-| **Updates** | UpdateService checks GitHub Releases (Thomas-TNT/InScope). Help → Check for Updates downloads and runs installer. |
+| **Updates** | UpdateService checks GitHub Releases on startup (production) and via Help → Check for Updates. Download and run installer. |
 | **Release script** | `scripts\create-release.ps1` / `.bat` — auto-suggests next version from tags, creates and pushes tag. |
 | **QuestPDF** | Community license set in App.OnStartup. |
 
@@ -56,13 +56,13 @@ A detailed build plan lives at `Personal_notes/.cursor/plans/inscope_build_plan_
                         │
 ┌───────────────────────▼─────────────────────────────────────┐
 │  Services                                                    │
-│  ConfigLoader, AppLogger, UpdateService, BlockLoader,        │
-│  RuleEngine, DocumentAssembler, PdfExporter, FlowDocToPdf    │
+│  ConfigLoader, ContentPathResolver, BlockLoader, BlockChangeLog │
+│  RuleEngine, DocumentAssembler, PdfExporter, FlowDocToPdf, UpdateService, AppLogger │
 └───────────────────────┬─────────────────────────────────────┘
                         │
 ┌───────────────────────▼─────────────────────────────────────┐
-│  Content (Content/ or C:\ProgramData\InScope\)                │
-│  Blocks/*.rtf (editable when writable), BlockMetadata/*.json, config.json │
+│  Content (effective path: primary or %LocalAppData%\InScope\Content)       │
+│  Blocks/*.rtf, BlockMetadata/*.json, config.json — all editable in-app    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -85,6 +85,8 @@ A detailed build plan lives at `Personal_notes/.cursor/plans/inscope_build_plan_
 | Phase 6 | QuestPDF license (Community), Hydraulic/Mechanical placeholder content, run-readiness.ps1 | Done |
 | Phase 7 | Block Library Editor (File → Edit Block Library); in-app RTF block editing with Save/Revert | Done |
 | Phase 8 | Release workflow (v* tag → InScope-Setup.exe), UpdateService, Check for Updates, version display, dev indicator, production blue header, create-release script | Done |
+| Phase 9 | Block Editor enhancements: Add/Delete blocks, ContentPathResolver (edit without admin), BlockChangeLog (14-day rolling backups) | Done |
+| Phase 10 | Question Editor (File → Edit Questions); ConfigLoader.SaveConfig; add/edit/delete questions in-app | Done |
 
 ---
 
@@ -97,7 +99,7 @@ A detailed build plan lives at `Personal_notes/.cursor/plans/inscope_build_plan_
 
 ### Services
 - `Services/ContentPathResolver.cs` — Effective content path; when primary Blocks folder is read-only, uses %LocalAppData%\InScope\Content (copy from primary on first use)
-- `Services/ConfigLoader.cs` — Loads config.json from given path
+- `Services/ConfigLoader.cs` — Loads config.json from given path; SaveConfig for persisting changes
 - `Services/AppLogger.cs` — File-based logging to %LocalAppData%\InScope\Logs\inscope.log; OpenLogFolder()
 - `Services/UpdateService.cs` — Checks GitHub Releases (Thomas-TNT/InScope); DownloadInstallerAsync; GetCurrentVersion
 - `Services/BlockLoader.cs` — Loads RTF, SaveRtf, CreateBlock, DeleteBlock, EnumerateBlockIds, LoadMetadata, ReadRtfBytes
@@ -108,10 +110,12 @@ A detailed build plan lives at `Personal_notes/.cursor/plans/inscope_build_plan_
 - `Services/FlowDocumentToPdfConverter.cs` — Traverses FlowDocument blocks, rebuilds content in QuestPDF fluent API
 
 ### UI
-- `MainWindow.xaml` — Menu (File → Start New, Export to PDF, Edit Block Library, Exit; Help → Check for Updates, Open Log Folder), two-pane layout, status bar with version (bottom-right), production blue header bar
+- `MainWindow.xaml` — Menu (File → Start New, Export to PDF, Edit Questions, Edit Block Library, Exit; Help → Check for Updates, Open Log Folder), two-pane layout, status bar, production blue header bar
 - `MainWindow.xaml.cs` — Wiring: Start New, answer handlers, RebuildDocument, RuleEngine/DocumentAssembler, PDF export, UpdateService, AppLogger; IsRunningFromDev, production title bar (DWM)
 - `BlockEditorWindow.xaml` — Block Library Editor: Add/Delete blocks, list (grouped by section), RichTextBox, Save/Revert/Close. Change log on save.
 - `AddBlockDialog.xaml` — Dialog for new block: BlockId, Section. Used by Block Editor Add button.
+- `QuestionEditorWindow.xaml` — Question Editor: Add/Edit/Delete questions, list, Save/Close. File → Edit Questions.
+- `QuestionDialog.xaml` — Dialog for add/edit question: Id, Text, Sections (procedure types).
 
 ### Scripts
 - `scripts/create-release.ps1` — Creates and pushes v* tag; auto-suggests next version from remote tags
@@ -159,7 +163,7 @@ A detailed build plan lives at `Personal_notes/.cursor/plans/inscope_build_plan_
 - DocumentAssembler uses XAML serialization (TextRange.Save/Load with DataFormats.Xaml) to copy blocks between FlowDocuments — avoids block ownership issues
 
 ### Content Path
-- ConfigLoader tries `./Content` (next to exe) then `C:\ProgramData\InScope`
+- ContentPathResolver.GetEffectiveContentPath(): uses `./Content` or `C:\ProgramData\InScope` when writable; when primary Blocks folder is read-only (e.g. non-admin), falls back to `%LocalAppData%\InScope\Content` (copy on first use) — enables edit without admin
 - config.json’s `basePath` can override; if relative, resolved against config directory
 
 ### Dev vs Production
@@ -244,7 +248,6 @@ if (meta != null && ...) yield return meta;
 
 ## 9. Known Limitations (Not Yet Implemented)
 
-- **Question filtering by procedure type:** If not configured, all questions appear for every procedure type. Add `sections` to QuestionConfig and filter in RenderQuestions() for procedure-specific questions.
 - **Hydraulic/Mechanical content:** Placeholder blocks may exist; full content set may need expansion.
 - **Code signing:** App is unsigned; SmartScreen shows "unrecognized app" warning. See `docs/HOW-TO-CODE-SIGN.md`.
 
@@ -262,8 +265,7 @@ if (meta != null && ...) yield return meta;
 ## 11. Suggested Next Steps
 
 1. Run validation checklist on Windows (`docs/VALIDATION_CHECKLIST.md`)
-2. Add `sections` to QuestionConfig and filter questions by procedure type (if not already done)
-3. Extend FlowDocumentToPdfConverter to preserve bold/italic (traverse Paragraph Inlines)
+2. Extend FlowDocumentToPdfConverter to preserve bold/italic (traverse Paragraph Inlines)
 4. Implement error handling per `docs/error-handling.md` (status bar messages, dialogs)
 5. Consider ProcedureSession persistence for crash recovery
 6. Optional: Code sign for SmartScreen (see `docs/HOW-TO-CODE-SIGN.md`)
@@ -278,3 +280,4 @@ if (meta != null && ...) yield return meta;
 - **Do not** use `Block.Clone()` — use XAML serialization
 - **Do not** put `yield return` inside try-with-catch — move yield outside
 - **Do not** assume `Document` resolves with only `using QuestPDF.Fluent` — add alias if CS0103 occurs
+- **Do not** use `Assembly.GetEntryAssembly()?.Location` for single-file apps — it returns empty; use `Environment.ProcessPath` or `AppContext.BaseDirectory` instead
