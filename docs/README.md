@@ -2,7 +2,7 @@
 
 ## For AI Agents (Start Here)
 
-1. **`AGENT_CONTEXT.md`** — Project overview, architecture, implementation status, design decisions, and **required fix patterns** for CI.
+1. **`AGENT_CONTEXT.md`** — Start here. Section 0 has a quick "Current State Summary" table; rest covers project overview, architecture, implementation status, design decisions, known limitations, and **required fix patterns** for CI.
 2. **`BUILD_TROUBLESHOOTING.md`** — GitHub Actions build errors and exact fixes (CS0103, CS1061, CS1977, etc.).
 3. **`.cursor/rules/developer-role.mdc`** — Developer role from role_based_agents; applies when working with code.
 

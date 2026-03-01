@@ -1,5 +1,9 @@
 using System;
+<<<<<<< Updated upstream
 using System.Linq;
+=======
+using System.Net;
+>>>>>>> Stashed changes
 using System.Net.Http;
 using System.Reflection;
 using System.Text.Json;
@@ -13,7 +17,11 @@ namespace InScope.Services;
 /// </summary>
 public class UpdateService
 {
+<<<<<<< Updated upstream
     private const string RepoOwner = "tteru";
+=======
+    private const string RepoOwner = "Thomas-TNT";
+>>>>>>> Stashed changes
     private const string RepoName = "InScope";
     private const string ApiBase = "https://api.github.com";
     private const string InstallerAssetName = "InScope-Setup.exe";
@@ -41,10 +49,19 @@ public class UpdateService
     {
         public bool Success { get; init; }
         public UpdateInfo? Update { get; init; }
+<<<<<<< Updated upstream
+=======
+        /// <summary>Optional error message when Success is false.</summary>
+        public string? ErrorMessage { get; init; }
+>>>>>>> Stashed changes
     }
 
     /// <summary>
     /// Fetch the latest release from GitHub and return info if a newer version exists.
+<<<<<<< Updated upstream
+=======
+    /// Handles 404 (no releases, or private repo) and rate limiting gracefully.
+>>>>>>> Stashed changes
     /// </summary>
     public static async Task<UpdateCheckResult> CheckForUpdateAsync(CancellationToken cancellationToken = default)
     {
@@ -52,6 +69,22 @@ public class UpdateService
         {
             var url = $"{ApiBase}/repos/{RepoOwner}/{RepoName}/releases/latest";
             using var response = await HttpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+<<<<<<< Updated upstream
+=======
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                AppLogger.Log(AppLogger.LogLevel.Info, "UpdateCheck", "No releases found or repo not accessible", new { status = 404 });
+                return new UpdateCheckResult { Success = false, ErrorMessage = "No releases found. If the repository is private, updates must be checked manually at the Releases page." };
+            }
+
+            if (response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                AppLogger.Log(AppLogger.LogLevel.Warning, "UpdateCheck", "GitHub API rate limit or access denied", new { status = 403 });
+                return new UpdateCheckResult { Success = false, ErrorMessage = "Update server temporarily unavailable (rate limit). Please try again later." };
+            }
+
+>>>>>>> Stashed changes
             response.EnsureSuccessStatusCode();
 
             var json = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -74,9 +107,21 @@ public class UpdateService
 
             return new UpdateCheckResult { Success = true, Update = new UpdateInfo(version, downloadUrl, htmlUrl ?? "", body ?? "") };
         }
+<<<<<<< Updated upstream
         catch
         {
             return new UpdateCheckResult { Success = false, Update = null };
+=======
+        catch (HttpRequestException ex)
+        {
+            AppLogger.Log(AppLogger.LogLevel.Warning, "UpdateCheck", "Network error", new { message = ex.Message });
+            return new UpdateCheckResult { Success = false, ErrorMessage = "Could not reach the update server. Check your internet connection." };
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Log(AppLogger.LogLevel.Error, "UpdateCheck", "Update check failed", new { message = ex.Message, type = ex.GetType().Name });
+            return new UpdateCheckResult { Success = false, ErrorMessage = "Could not check for updates. Please try again later." };
+>>>>>>> Stashed changes
         }
     }
 
@@ -110,6 +155,7 @@ public class UpdateService
         if (!root.TryGetProperty("assets", out var assets) || assets.ValueKind != JsonValueKind.Array)
             return null;
 
+<<<<<<< Updated upstream
         foreach (var asset in assets.EnumerateArray())
         {
             var name = asset.TryGetProperty("name", out var n) ? n.GetString() : null;
@@ -118,6 +164,24 @@ public class UpdateService
         }
 
         return null;
+=======
+        string? fallbackExe = null;
+        foreach (var asset in assets.EnumerateArray())
+        {
+            var name = asset.TryGetProperty("name", out var n) ? n.GetString() : null;
+            if (string.IsNullOrEmpty(name)) continue;
+            if (!asset.TryGetProperty("browser_download_url", out var urlProp)) continue;
+            var url = urlProp.GetString();
+            if (string.IsNullOrEmpty(url)) continue;
+
+            if (name.Equals(InstallerAssetName, StringComparison.OrdinalIgnoreCase))
+                return url;
+            if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                fallbackExe ??= url;
+        }
+
+        return fallbackExe;
+>>>>>>> Stashed changes
     }
 }
 

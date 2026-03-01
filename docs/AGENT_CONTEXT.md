@@ -8,6 +8,20 @@ This document provides context for AI agents (e.g. Cursor) working on the InScop
 
 ---
 
+## 0. Current State Summary (Quick Context)
+
+| Area | Status |
+|------|--------|
+| **Content** | Electrical procedure only (`elec-000`, `elec-001`, `elec-002`). Hydraulic/Mechanical listed in config but no blocks. |
+| **Questions** | All questions shown for all procedure types (no `sections` filtering). |
+| **OnAnswer** | Append-only. Changing Yes→No does **not** remove blocks — known limitation (duplication risk). |
+| **Logging** | `AppLogger` writes to `%LocalAppData%\InScope\Logs\inscope.log`. Help → Open Log Folder. |
+| **CI** | `build.yml` runs on push/PR to main; build + publish to `publish` folder. **No release creation.** |
+| **Installer / Updates** | None. No Inno Setup, no `UpdateService`, no GitHub Releases workflow. |
+| **QuestPDF** | Community license assumed (no explicit `QuestPDF.Settings.License` set; may need for compliance). |
+
+---
+
 ## 1. Project Overview
 
 **InScope** is a Windows WPF desktop application that builds procedure documents from pre-authored RTF blocks. The user answers guided Yes/No questions; the RuleEngine decides which blocks to insert; blocks are appended to a live document; the user can edit in place; the final document is exported to PDF.
@@ -64,7 +78,11 @@ A detailed build plan lives at `Personal_notes/.cursor/plans/inscope_build_plan_
 | Phase 3 | Main window UI, menu, questions, RichTextBox | Done |
 | Phase 4 | Sample content (Electrical procedure) | Done |
 | Phase 5 | Publish script, validation checklist | Done |
+<<<<<<< Updated upstream
 | Phase 6 | QuestPDF license (Community), Hydraulic/Mechanical placeholder content, run-readiness.ps1, developer-role rule, web-app-feasibility doc | Done |
+=======
+| Phase 5.5 | AppLogger, Help → Open Log Folder, startup/PDF error logging | Done |
+>>>>>>> Stashed changes
 
 ---
 
@@ -77,6 +95,7 @@ A detailed build plan lives at `Personal_notes/.cursor/plans/inscope_build_plan_
 
 ### Services
 - `Services/ConfigLoader.cs` — Resolves content path (./Content or C:\ProgramData\InScope), loads config.json
+- `Services/AppLogger.cs` — File-based logging to %LocalAppData%\InScope\Logs\inscope.log; OpenLogFolder()
 - `Services/BlockLoader.cs` — Loads RTF as FlowDocument, loads BlockMetadata JSON by section
 - `Services/RuleEngine.cs` — Evaluates Conditions (AND/OR) against Answers; returns ordered BlockIds
 - `Services/DocumentAssembler.cs` — Appends blocks via XAML serialization (TextRange save/load); tracks InsertedBlockIds
@@ -84,8 +103,8 @@ A detailed build plan lives at `Personal_notes/.cursor/plans/inscope_build_plan_
 - `Services/FlowDocumentToPdfConverter.cs` — Traverses FlowDocument blocks, rebuilds content in QuestPDF fluent API
 
 ### UI
-- `MainWindow.xaml` — Menu (File → Start New, Export to PDF, Exit), two-pane layout, status bar
-- `MainWindow.xaml.cs` — Wiring: Start New, answer handlers, RuleEngine/DocumentAssembler calls, PDF export
+- `MainWindow.xaml` — Menu (File → Start New, Export to PDF, Exit; Help → Open Log Folder), two-pane layout, status bar
+- `MainWindow.xaml.cs` — Wiring: Start New, answer handlers, RuleEngine/DocumentAssembler calls, PDF export, AppLogger
 
 ### Content
 - `Content/config.json` — Procedure types, questions, basePath
@@ -134,7 +153,7 @@ A detailed build plan lives at `Personal_notes/.cursor/plans/inscope_build_plan_
 - **Build:** `dotnet build -c Release`
 - **Run:** `dotnet run` or run exe from output directory; or `.\scripts\run-readiness.ps1` (checks .NET, restores, builds, launches)
 - **Publish:** `scripts/publish.ps1` or `dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true ...`
-- **GitHub Actions:** `.github/workflows/build.yml` runs on push/PR to main; Windows runner, .NET 8
+- **GitHub Actions:** `.github/workflows/build.yml` runs on push/PR to main; Windows runner, .NET 8. Output to `publish/`. **Does not create GitHub Releases.** No installer or auto-update workflow.
 
 Content is copied to output via `InScope.csproj`:
 ```xml
@@ -202,7 +221,17 @@ if (meta != null && ...) yield return meta;
 
 ---
 
-## 9. Out of Scope (MVP)
+## 9. Known Limitations (Not Yet Implemented)
+
+- **Block rebuild on answer change:** OnAnswer is append-only. If user changes Yes→No, blocks whose conditions are no longer met stay in the document. Fix: have DocumentAssembler rebuild from scratch (ClearBlocks + re-insert) when answers change.
+- **Question filtering by procedure type:** All questions appear for every procedure type. To show procedure-specific questions, add `sections` to QuestionConfig (e.g. `["Electrical"]`) and filter in RenderQuestions() by `_session.ProcedureType`.
+- **Hydraulic/Mechanical content:** Only Electrical blocks exist. Adding hyd-000…hyd-004 and mech-000…mech-004 in Content/Blocks and BlockMetadata would complete the sample set.
+- **Auto-release:** build.yml does not create releases. To add: run on push to main only; build installer (Inno Setup); use `softprops/action-gh-release` with `1.0.${{ github.run_number }}`. Requires `installer/InScope.iss` and scripts/build-installer.ps1.
+- **Update check:** No UpdateService. Help → Check for Updates could call GitHub Releases API.
+
+---
+
+## 10. Out of Scope (MVP)
 
 - Block editing inside app
 - Automatic numbering
@@ -212,17 +241,27 @@ if (meta != null && ...) yield return meta;
 
 ---
 
-## 10. Suggested Next Steps
+## 11. Suggested Next Steps
 
 1. Run validation checklist on Windows (`docs/VALIDATION_CHECKLIST.md`)
+<<<<<<< Updated upstream
 2. Extend FlowDocumentToPdfConverter to preserve bold/italic (traverse Paragraph Inlines)
 3. Add more Hydraulic and Mechanical blocks with procedure-specific questions and conditions
 4. Implement error handling per `docs/error-handling.md` (status bar messages, dialogs)
 5. Consider ProcedureSession persistence for crash recovery
+=======
+2. Fix block rebuild: OnAnswer should rebuild document from scratch when answers change (prevents duplication)
+3. Add `sections` to QuestionConfig and filter questions by procedure type in RenderQuestions()
+4. Add Hydraulic and Mechanical sample content (Blocks + BlockMetadata)
+5. Extend FlowDocumentToPdfConverter to preserve bold/italic (traverse Paragraph Inlines)
+6. Implement error handling per `docs/error-handling.md` (status bar messages, dialogs)
+7. Consider ProcedureSession persistence for crash recovery
+8. Optional: Add auto-release workflow (installer, release.yml), UpdateService, QuestPDF license
+>>>>>>> Stashed changes
 
 ---
 
-## 11. Do Not (Common Mistakes)
+## 12. Do Not (Common Mistakes)
 
 - **Do not** omit QuestPDF license — set `QuestPDF.Settings.License = LicenseType.Community` in App.OnStartup or PDF export will throw
 - **Do not** use `JsonElement.TryGetBoolean` — use ValueKind check + GetBoolean

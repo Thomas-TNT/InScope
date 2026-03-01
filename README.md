@@ -2,7 +2,7 @@
 
 A Windows WPF desktop application that builds procedure documents from standardized RTF instruction blocks. Guided Yes/No questions determine which blocks are appended; the assembled document can be edited in place and exported to PDF.
 
-**For AI agents:** Read `docs/AGENT_CONTEXT.md` first. For CI build failures, see `docs/BUILD_TROUBLESHOOTING.md`.
+**For AI agents:** Read `docs/AGENT_CONTEXT.md` first (Section 0 = quick context). For CI build failures, see `docs/BUILD_TROUBLESHOOTING.md`.
 
 ## Prerequisites
 
