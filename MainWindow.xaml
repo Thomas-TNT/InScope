@@ -24,6 +24,8 @@
                 <Separator/>
                 <MenuItem Header="Export to PDF" Click="ExportPdf_Click"/>
                 <Separator/>
+                <MenuItem Header="Edit Block Library…" Click="EditBlockLibrary_Click"/>
+                <Separator/>
                 <MenuItem Header="Exit" Click="Exit_Click"/>
             </MenuItem>
             <MenuItem Header="Help">

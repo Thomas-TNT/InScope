@@ -337,4 +337,19 @@ public partial class MainWindow : Window
     {
         AppLogger.OpenLogFolder();
     }
+
+    private void EditBlockLibrary_Click(object sender, RoutedEventArgs e)
+    {
+        if (_blockLoader == null)
+        {
+            MessageBox.Show("Content setup not found. Add config.json to the Content folder first.", "InScope", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var editor = new BlockEditorWindow(_blockLoader)
+        {
+            Owner = this
+        };
+        editor.ShowDialog();
+    }
 }

@@ -2,7 +2,7 @@
 
 ## Overview
 
-InScope content (RTF blocks and BlockMetadata) is read-only at runtime. Updates to procedure content do not require an app update.
+InScope content (RTF blocks and BlockMetadata) can be edited from within the app when the content folder is writable. Updates to procedure content do not require an app update.
 
 ## Ownership
 
@@ -13,9 +13,9 @@ InScope content (RTF blocks and BlockMetadata) is read-only at runtime. Updates 
 
 ## Authoring Workflow
 
-1. **Create or edit RTF blocks** in Word, WordPad, or another RTF editor.
-   - Include: title paragraph, bullet lists, images as needed.
-   - Save as `.rtf` in `Blocks/` with a descriptive BlockId (e.g. `elec-001.rtf`).
+1. **Create or edit RTF blocks** — use one of:
+   - **In-app:** File → Edit Block Library to browse, edit, and save blocks directly.
+   - **External:** Word, WordPad, or another RTF editor. Include title paragraph, bullet lists, images as needed. Save as `.rtf` in `Blocks/` with a descriptive BlockId (e.g. `elec-001.rtf`).
 
 2. **Create or edit BlockMetadata** JSON for each block.
    - Ensure `BlockId` matches the RTF filename (without extension).
