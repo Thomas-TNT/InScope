@@ -11,11 +11,11 @@ namespace InScope.Services;
 /// Appends blocks to the procedure document. Tracks InsertedBlockIds to prevent duplicates.
 /// When insertedBlocksMap is provided, records block references for later removal.
 /// </summary>
-public class DocumentAssembler
+public class DocumentAssembler : IDocumentAssembler
 {
-    private readonly BlockLoader _blockLoader;
+    private readonly IBlockLoader _blockLoader;
 
-    public DocumentAssembler(BlockLoader blockLoader)
+    public DocumentAssembler(IBlockLoader blockLoader)
     {
         _blockLoader = blockLoader;
     }

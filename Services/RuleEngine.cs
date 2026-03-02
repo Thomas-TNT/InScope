@@ -9,7 +9,7 @@ namespace InScope.Services;
 /// Evaluates block conditions against user answers. Returns ordered BlockIds to insert.
 /// AND: all top-level conditions must be true. OR: nested arrays, any one satisfies.
 /// </summary>
-public class RuleEngine
+public class RuleEngine : IRuleEngine
 {
     /// <summary>
     /// Given metadata and answers, return BlockIds whose conditions are satisfied, ordered by Order.

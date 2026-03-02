@@ -13,26 +13,28 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Border x:Name="ProductionHeaderBar" Height="4" Background="#0078D4" Visibility="Collapsed"/>
+        <Border x:Name="ProductionHeaderBar" Height="4" Background="{StaticResource AccentBrush}"
+                Visibility="{Binding ProductionHeaderVisibility}"/>
 
         <Menu Grid.Row="1">
             <MenuItem Header="File">
                 <MenuItem Header="Start New">
-                    <MenuItem Header="Electrical" Click="StartNew_Click" Tag="{x:Static local:Constants.ProcedureTypeElectrical}"/>
-                    <MenuItem Header="Hydraulic" Click="StartNew_Click" Tag="{x:Static local:Constants.ProcedureTypeHydraulic}"/>
-                    <MenuItem Header="Mechanical" Click="StartNew_Click" Tag="{x:Static local:Constants.ProcedureTypeMechanical}"/>
+                    <MenuItem Header="Electrical" Command="{Binding StartNewCommand}" CommandParameter="{x:Static local:Constants.ProcedureTypeElectrical}"/>
+                    <MenuItem Header="Hydraulic" Command="{Binding StartNewCommand}" CommandParameter="{x:Static local:Constants.ProcedureTypeHydraulic}"/>
+                    <MenuItem Header="Mechanical" Command="{Binding StartNewCommand}" CommandParameter="{x:Static local:Constants.ProcedureTypeMechanical}"/>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="Export to PDF" Click="ExportPdf_Click"/>
+                <MenuItem Header="Export to PDF" Command="{Binding ExportPdfCommand}"/>
                 <Separator/>
-                <MenuItem Header="Edit Questions…" Click="EditQuestions_Click"/>
-                <MenuItem Header="Edit Block Library…" Click="EditBlockLibrary_Click"/>
+                <MenuItem Header="Edit Questions…" Command="{Binding EditQuestionsCommand}"/>
+                <MenuItem Header="Edit Block Library…" Command="{Binding EditBlockLibraryCommand}"/>
                 <Separator/>
-                <MenuItem Header="Exit" Click="Exit_Click"/>
+                <MenuItem Header="Exit" Command="{Binding ExitCommand}"/>
             </MenuItem>
             <MenuItem Header="Help">
-                <MenuItem Header="Check for Updates" Click="CheckForUpdates_Click"/>
-                <MenuItem Header="Open Log Folder" Click="OpenLogFolder_Click"/>
+                <MenuItem Header="Check for Updates" Command="{Binding CheckForUpdatesCommand}"/>
+                <MenuItem Header="Open Log Folder" Command="{Binding OpenLogFolderCommand}"/>
+                <MenuItem Header="Recover Block Backup…" Command="{Binding RecoverBlockBackupCommand}"/>
             </MenuItem>
         </Menu>
 
@@ -44,17 +46,32 @@
             </Grid.ColumnDefinitions>
 
             <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Padding="10">
-                <StackPanel x:Name="QuestionsPanel">
-                    <TextBlock x:Name="QuestionsHeader" Text="Select a procedure type (File → Start New)" 
+                <StackPanel>
+                    <TextBlock Text="{Binding QuestionsHeader}"
                                TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,0,0,10"
-                               Foreground="#666"/>
+                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <ItemsControl ItemsSource="{Binding Questions}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="0,0,0,12">
+                                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" Margin="0,8,0,4"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="Yes" Width="60" Margin="0,0,8,0"
+                                                Command="{Binding YesCommand}"/>
+                                        <Button Content="No" Width="60"
+                                                Command="{Binding NoCommand}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </StackPanel>
             </ScrollViewer>
 
-            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="#ddd" ShowsPreview="True"/>
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{StaticResource SplitterBrush}" ShowsPreview="True"/>
 
-            <Border Grid.Column="2" BorderBrush="#ccc" BorderThickness="1" Margin="5">
-                <RichTextBox x:Name="DocumentEditor" 
+            <Border Grid.Column="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Margin="5">
+                <RichTextBox x:Name="DocumentEditor"
                              IsReadOnly="False"
                              Padding="10"
                              VerticalScrollBarVisibility="Auto"
@@ -66,19 +83,19 @@
         <Grid Grid.Row="3" Height="24">
             <StatusBar>
                 <StatusBarItem>
-                    <TextBlock x:Name="StatusText" Text="Ready"/>
+                    <TextBlock Text="{Binding StatusText}"/>
                 </StatusBarItem>
                 <Separator/>
                 <StatusBarItem>
-                    <TextBlock x:Name="ProcedureTypeText" Text="—"/>
+                    <TextBlock Text="{Binding ProcedureTypeText}"/>
                 </StatusBarItem>
                 <Separator/>
                 <StatusBarItem>
-                    <TextBlock x:Name="BlockCountText" Text="0 blocks"/>
+                    <TextBlock Text="{Binding BlockCountText}"/>
                 </StatusBarItem>
             </StatusBar>
-            <TextBlock x:Name="VersionText" Text="v0.0.0" HorizontalAlignment="Right" VerticalAlignment="Center"
-                       Margin="0,0,12,0" Foreground="#888" FontSize="11"/>
+            <TextBlock Text="{Binding VersionText}" HorizontalAlignment="Right" VerticalAlignment="Center"
+                       Margin="0,0,12,0" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
         </Grid>
     </Grid>
 </Window>

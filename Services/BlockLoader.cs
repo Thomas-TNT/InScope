@@ -11,7 +11,7 @@ namespace InScope.Services;
 /// <summary>
 /// Loads RTF blocks and BlockMetadata from the content directory.
 /// </summary>
-public class BlockLoader
+public class BlockLoader : IBlockLoader
 {
     private readonly string _basePath;
 

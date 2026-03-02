@@ -9,7 +9,7 @@ namespace InScope.Services;
 /// <summary>
 /// Loads config.json from the content directory.
 /// </summary>
-public class ConfigLoader
+public static class ConfigLoader
 {
     /// <summary>
     /// Load config.json from the given base path.

@@ -12,25 +12,26 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" BorderBrush="#ccc" BorderThickness="1" Margin="8">
+        <Border Grid.Row="0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Margin="8">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="8,8,8,4">
-                    <TextBlock Text="Questions" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="#333"/>
-                    <Button x:Name="AddButton" Content="Add" Margin="12,0,0,0" Padding="12,4" Click="Add_Click"/>
-                    <Button x:Name="EditButton" Content="Edit" Margin="4,0,0,0" Padding="12,4" Click="Edit_Click"/>
-                    <Button x:Name="DeleteButton" Content="Delete" Margin="4,0,0,0" Padding="12,4" Click="Delete_Click"/>
+                    <TextBlock Text="Questions" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}"/>
+                    <Button Content="Add" Margin="12,0,0,0" Padding="12,4" Command="{Binding AddCommand}"/>
+                    <Button Content="Edit" Margin="4,0,0,0" Padding="12,4" Command="{Binding EditCommand}"/>
+                    <Button Content="Delete" Margin="4,0,0,0" Padding="12,4" Command="{Binding DeleteCommand}"/>
                 </StackPanel>
-                <ListBox x:Name="QuestionList" Grid.Row="1" Margin="8,4,8,8"
-                         SelectionChanged="QuestionList_SelectionChanged">
+                <ListBox Grid.Row="1" Margin="8,4,8,8"
+                         ItemsSource="{Binding Questions}"
+                         SelectedItem="{Binding SelectedQuestion}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel>
                                 <TextBlock Text="{Binding Id}" FontWeight="SemiBold"/>
-                                <TextBlock Text="{Binding Text}" TextTrimming="CharacterEllipsis" Foreground="#666" FontSize="11" Margin="0,2,0,0"/>
+                                <TextBlock Text="{Binding Text}" TextTrimming="CharacterEllipsis" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" Margin="0,2,0,0"/>
                             </StackPanel>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
@@ -39,12 +40,12 @@
         </Border>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="8,4" HorizontalAlignment="Right">
-            <Button x:Name="SaveButton" Content="Save" Width="80" Height="28" Margin="0,0,8,0" Click="Save_Click"/>
-            <Button Content="Close" Width="80" Height="28" IsCancel="True" Click="Close_Click"/>
+            <Button Content="Save" Width="80" Height="28" Margin="0,0,8,0" Command="{Binding SaveCommand}"/>
+            <Button Content="Close" Width="80" Height="28" IsCancel="True" Command="{Binding CloseRequestedCommand}"/>
         </StackPanel>
 
-        <Border Grid.Row="2" Background="#f5f5f5" Padding="8,4">
-            <TextBlock x:Name="StatusText" Text="Add, edit, or delete questions. Click Save to persist changes." TextWrapping="Wrap" Foreground="#666" FontSize="12"/>
+        <Border Grid.Row="2" Style="{StaticResource StatusBarAreaBorderStyle}">
+            <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
         </Border>
     </Grid>
 </Window>

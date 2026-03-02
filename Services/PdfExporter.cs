@@ -7,7 +7,7 @@ namespace InScope.Services;
 /// <summary>
 /// Exports the assembled FlowDocument to PDF.
 /// </summary>
-public class PdfExporter
+public class PdfExporter : IPdfExporter
 {
     /// <summary>
     /// Export the FlowDocument to a PDF file at the given path.
