@@ -37,8 +37,9 @@ jobs:
       - name: Publish
         run: |
           $version = "${{ steps.version.outputs.version }}"
-          dotnet publish -c Release -r win-x64 --self-contained true `
+          dotnet publish InScope.csproj -c Release -r win-x64 --self-contained true `
             /p:PublishSingleFile=true `
+            /p:UseAppHost=true `
             /p:IncludeNativeLibrariesForSelfExtract=true `
             /p:EnableCompressionInSingleFile=true `
             /p:Version=$version `
