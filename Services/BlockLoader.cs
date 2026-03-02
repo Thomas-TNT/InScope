@@ -98,7 +98,13 @@ public class BlockLoader : IBlockLoader
     /// <summary>
     /// Create a new block with empty RTF and metadata. Returns true on success.
     /// </summary>
-    public bool CreateBlock(string blockId, string section)
+    public bool CreateBlock(string blockId, string section) => CreateBlock(blockId, section, null);
+
+    /// <summary>
+    /// Create a new block with empty RTF and metadata. Returns true on success.
+    /// When conditions is provided, the block is shown only when those conditions match user answers.
+    /// </summary>
+    public bool CreateBlock(string blockId, string section, IReadOnlyList<object>? conditions)
     {
         if (string.IsNullOrWhiteSpace(blockId))
             return false;
@@ -130,7 +136,7 @@ public class BlockLoader : IBlockLoader
                 BlockId = blockId,
                 Section = section,
                 Order = order,
-                Conditions = new List<object>()
+                Conditions = conditions != null ? new List<object>(conditions) : new List<object>()
             };
             var options = new JsonSerializerOptions { WriteIndented = true };
             var json = JsonSerializer.Serialize(meta, options);

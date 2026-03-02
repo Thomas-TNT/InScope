@@ -12,6 +12,7 @@ public interface IBlockLoader
     IEnumerable<string> EnumerateBlockIds();
     bool SaveRtf(string blockId, FlowDocument document);
     bool CreateBlock(string blockId, string section);
+    bool CreateBlock(string blockId, string section, IReadOnlyList<object>? conditions);
     bool DeleteBlock(string blockId);
     bool BlockExists(string blockId);
     byte[]? ReadRtfBytes(string blockId);

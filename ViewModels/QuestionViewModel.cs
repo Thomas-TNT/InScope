@@ -15,12 +15,24 @@ public partial class QuestionViewModel : ObservableObject
     private readonly QuestionConfig? _editQuestion;
     private readonly HashSet<string> _existingIds;
     private readonly Action<bool> _closeCallback;
+    private string _lastDerivedId = string.Empty;
 
     [ObservableProperty]
     private string _questionId = string.Empty;
 
     [ObservableProperty]
     private string _questionText = string.Empty;
+
+    partial void OnQuestionTextChanged(string value)
+    {
+        if (_editQuestion != null) return;
+        var derived = QuestionIdHelper.DeriveFromText(value);
+        if (string.IsNullOrEmpty(QuestionId) || string.Equals(QuestionId, _lastDerivedId, System.StringComparison.Ordinal))
+        {
+            QuestionId = derived;
+        }
+        _lastDerivedId = derived;
+    }
 
     public ObservableCollection<SectionItemViewModel> Sections { get; } = new();
 

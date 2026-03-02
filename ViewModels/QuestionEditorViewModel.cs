@@ -12,6 +12,7 @@ namespace InScope.ViewModels;
 public partial class QuestionEditorViewModel : ObservableObject
 {
     private readonly IConfigLoader _configLoader;
+    private readonly IBlockLoader _blockLoader;
     private readonly AppConfig _config;
     private readonly string _basePath;
     private readonly Action _closeCallback;
@@ -31,12 +32,14 @@ public partial class QuestionEditorViewModel : ObservableObject
 
     public QuestionEditorViewModel(
         IConfigLoader configLoader,
+        IBlockLoader blockLoader,
         AppConfig config,
         string basePath,
         Action closeCallback,
         Func<IEnumerable<string>, QuestionConfig?, IEnumerable<string>, QuestionConfig?> showQuestionDialog)
     {
         _configLoader = configLoader;
+        _blockLoader = blockLoader;
         _config = config;
         _basePath = basePath;
         _closeCallback = closeCallback;
@@ -111,8 +114,35 @@ public partial class QuestionEditorViewModel : ObservableObject
             return;
         }
 
+        var blockCreateFailures = EnsureBlocksForQuestions();
         WasSaved = true;
-        StatusText = "Saved successfully.";
+        StatusText = blockCreateFailures == 0
+            ? "Saved successfully."
+            : $"Saved successfully. Could not create {blockCreateFailures} block(s) (Block Library may be read-only).";
+    }
+
+    private int EnsureBlocksForQuestions()
+    {
+        var failures = 0;
+        foreach (var question in Questions)
+        {
+            var sections = question.Sections?.Count > 0
+                ? question.Sections
+                : _config.ProcedureTypes;
+            if (sections == null || sections.Count == 0)
+                continue;
+
+            var conditions = new List<object> { new List<object> { question.Id, true } };
+            foreach (var section in sections)
+            {
+                var blockId = $"{question.Id}-{section}";
+                if (_blockLoader.BlockExists(blockId))
+                    continue;
+                if (!_blockLoader.CreateBlock(blockId, section, conditions))
+                    failures++;
+            }
+        }
+        return failures;
     }
 
     [RelayCommand]

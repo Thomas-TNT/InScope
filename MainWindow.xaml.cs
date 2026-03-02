@@ -165,10 +165,10 @@ public partial class MainWindow : Window
         };
         _viewModel.RequestEditQuestions = () =>
         {
-            if (_viewModel == null) return;
+            if (_viewModel == null || _blockLoader == null) return;
             var configForEdit = ServiceLocator.GetRequiredService<IConfigLoader>().Load(basePath);
             if (configForEdit == null) return;
-            var editor = new QuestionEditorWindow(configForEdit, basePath) { Owner = this };
+            var editor = new QuestionEditorWindow(configForEdit, basePath, _blockLoader) { Owner = this };
             editor.ShowDialog();
             if (editor.WasSaved)
             {
