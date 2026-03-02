@@ -22,4 +22,8 @@
     <None Include="Content\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="InScope.Tests\**" />
+  </ItemGroup>
+
 </Project>
